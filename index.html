@@ -24,9 +24,13 @@
 
   html, body {
     width: 100%;
-    height: 100%;
-    overflow: hidden;
     background: #0b0b0f; /* 图片加载前的底色，避免白屏闪烁 */
+  }
+
+  /* 页面现在要能纵向滚动：第一屏是主页，往下是新闻页 */
+  body {
+    overflow-x: hidden;
+    color: #172033;
   }
 
   /* ===== 背景图层：打开网页时淡入 ===== */
@@ -403,13 +407,6 @@
   /* 已登录状态 */
   .auth-user { display: flex; flex-direction: column; gap: 11px; }
 
-  .auth-user-email {
-    font-size: 12px;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.62);
-    word-break: break-all;
-  }
-
   .auth-signout {
     height: 38px;
     font-family: inherit;
@@ -433,6 +430,237 @@
     .auth-btn { height: 36px; padding: 0 13px; font-size: 13px; }
   }
 
+  /* ================= 个人中心（登录后显示） ================= */
+  .profile {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding-bottom: 13px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .profile-avatar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0b1220;
+    background: linear-gradient(140deg, #bfe3ff, #7fc4ff);
+  }
+
+  .profile-info { min-width: 0; }
+
+  .profile-name {
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profile-email {
+    margin-top: 2px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.58);
+    word-break: break-all;
+  }
+
+  .profile-tip {
+    font-size: 11px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  /* ================= 第一屏 + 向下滑动提示 ================= */
+  .hero {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    height: 100svh;   /* 手机上避开地址栏抖动 */
+  }
+
+  .scroll-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 26px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-cn);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: rgba(255, 255, 255, 0.72);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    transform: translateX(-50%);
+    animation: hintIn 1s ease 2.6s both;
+    pointer-events: none;
+  }
+
+  @keyframes hintIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* 用边框画一个小箭头，省得引图标 */
+  .scroll-hint i {
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid rgba(255, 255, 255, 0.8);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.8);
+    transform: rotate(45deg);
+    animation: hintBob 1.6s ease-in-out infinite;
+  }
+
+  @keyframes hintBob {
+    0%, 100% { transform: rotate(45deg) translate(0, 0); opacity: 0.55; }
+    50%      { transform: rotate(45deg) translate(3px, 3px); opacity: 1; }
+  }
+
+  /* ================= 新闻页：随滚动推上来的白底 ================= */
+  .news {
+    position: relative;
+    z-index: 5;                 /* 高于标题(2)，所以滚上来会把主页盖住 */
+    min-height: 100vh;
+    padding: 0 22px 90px;
+    background: #ffffff;
+    color: #172033;
+    font-family: var(--font-cn);
+    /* --reveal 由滚动位置驱动：0 = 还在屏幕下方，1 = 完全铺满 */
+    border-radius: calc((1 - var(--reveal, 0)) * 30px)
+                   calc((1 - var(--reveal, 0)) * 30px) 0 0;
+    box-shadow: 0 calc(var(--reveal, 0) * -6px) 60px rgba(0, 0, 0, 0.45);
+  }
+
+  /* 顶部那条小横杠，看着像"抽上来的一张纸" */
+  .news-grabber {
+    width: 46px;
+    height: 5px;
+    margin: 0 auto;
+    border-radius: 99px;
+    background: rgba(23, 32, 51, 0.14);
+    transform: translateY(14px);
+    opacity: calc(1 - var(--reveal, 0) * 0.7);
+  }
+
+  /* 内容默认藏着，等白底铺满再加 .is-ready 才出来 */
+  .news-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding-top: 74px;
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.55s ease 0.1s, transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s;
+  }
+
+  .news.is-ready .news-inner {
+    opacity: 1;
+    transform: none;
+  }
+
+  .news-heading {
+    margin-bottom: 26px;
+    font-size: clamp(30px, 5vw, 46px);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  /* 透明横条只作装饰，给标题一点节奏 */
+  .news-heading::after {
+    content: "";
+    display: block;
+    width: 52px;
+    height: 4px;
+    margin-top: 14px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #7fc4ff, #b9dcff);
+  }
+
+  /* 上图下文的小方格 */
+  .news-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 22px;
+  }
+
+  .news-card {
+    width: 320px;
+    max-width: 100%;
+    overflow: hidden;
+    border: 1px solid rgba(23, 32, 51, 0.08);
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 10px 26px rgba(23, 32, 51, 0.08);
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.5s ease 0.18s,
+                transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) 0.18s,
+                box-shadow 0.28s ease;
+  }
+
+  .news.is-ready .news-card {
+    opacity: 1;
+    transform: none;
+  }
+
+  .news.is-ready .news-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(23, 32, 51, 0.14);
+  }
+
+  .news-thumb {
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #eef2f8;
+  }
+
+  .news-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .news.is-ready .news-card:hover .news-thumb img {
+    transform: scale(1.045);
+  }
+
+  .news-body { padding: 16px 18px 20px; }
+
+  .news-card-title {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.45;
+  }
+
+  .news-card-text {
+    margin-top: 7px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #5c6a80;
+  }
+
+  /* 滚到新闻页时，右上角按钮从"深色玻璃"换成"白色卡片"，在浅色背景上更清楚 */
+  body.on-news .auth-btn {
+    color: #16233a;
+    border-color: rgba(20, 30, 50, 0.14);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 6px 22px rgba(20, 30, 50, 0.14),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  body.on-news .auth-btn:hover {
+    background: #fff;
+    border-color: rgba(20, 30, 50, 0.24);
+  }
+
   /* 尊重系统的“减少动态效果”偏好 */
   @media (prefers-reduced-motion: reduce) {
     .bg      { animation: none; opacity: 1; transform: none; filter: none; }
@@ -442,6 +670,9 @@
     .cursor  { animation: none; }
     .auth-btn { animation: none; }
     .auth.open .auth-panel { animation: none; }
+    .scroll-hint { animation: none; opacity: 1; }
+    .scroll-hint i { animation: none; }
+    .news-inner, .news-card { transition: none; opacity: 1; transform: none; }
   }
 </style>
 </head>
@@ -496,12 +727,62 @@
 
       <div class="auth-msg" id="authMsg" role="status" aria-live="polite"></div>
 
+      <!-- ============ 登录后显示：个人中心 ============ -->
       <div class="auth-user" id="authUser" hidden>
-        <div class="auth-user-email" id="authUserEmail"></div>
+        <div class="profile">
+          <div class="profile-avatar" id="profileAvatar">S</div>
+          <div class="profile-info">
+            <div class="profile-name" id="profileName">…</div>
+            <div class="profile-email" id="authUserEmail"></div>
+          </div>
+        </div>
+
+        <label class="auth-field">
+          <span>昵称</span>
+          <input type="text" id="nickInput" maxlength="20" placeholder="最多 20 个字" autocomplete="nickname">
+        </label>
+        <button class="auth-submit" id="authSaveNick" type="button">保存昵称</button>
+        <div class="profile-tip">昵称保存在你的账号资料里，换个设备登录也会同步。</div>
         <button class="auth-signout" id="authSignout" type="button">退出登录</button>
       </div>
     </div>
   </div>
+
+  <!-- ===== 第一屏占位：让新闻页的白底从下面推上来 ===== -->
+  <div class="hero">
+    <div class="scroll-hint"><span>向下滑动</span><i></i></div>
+  </div>
+
+  <!-- ===== 新闻页 ===== -->
+  <main class="news" id="news">
+    <div class="news-grabber" aria-hidden="true"></div>
+    <div class="news-inner">
+      <h2 class="news-heading">新闻</h2>
+      <div class="news-grid">
+
+        <!-- 一条新闻 = 一个圆角方格：图片在上面，文字在下面。
+             要加新的，把整个 <article> 复制一份改图和标题就行。 -->
+        <article class="news-card">
+          <div class="news-thumb">
+            <img src="./头像.jpg" alt="没东西写了喵">
+          </div>
+          <div class="news-body">
+            <h3 class="news-card-title">没东西写了喵</h3>
+            <!-- 想加正文就把下面这行的注释去掉
+            <p class="news-card-text">正文写在这里。</p>
+            -->
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </main>
+
+<noscript>
+  <style>
+    .news-inner, .news-card { opacity: 1 !important; transform: none !important; }
+  </style>
+</noscript>
 
 <script>
   /* ================= 逐字打字动画 ================= */
@@ -538,6 +819,52 @@
     }
 
     setTimeout(next, START_DELAY);
+  })();
+</script>
+
+<script>
+  /* ================= 新闻页：白底随滚动推上来 ================= */
+  (function () {
+    var news = document.getElementById("news");
+    var root = document.documentElement;
+    if (!news) return;
+
+    var reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var ticking = false;
+    var revealed = false;
+
+    function update() {
+      ticking = false;
+      var vh = window.innerHeight || 1;
+      var y = window.pageYOffset || root.scrollTop || 0;
+      var p = y / vh;
+      if (p < 0) p = 0;
+      if (p > 1) p = 1;
+
+      // 0 = 白底还在屏幕外，1 = 完全铺满。用来驱动圆角、阴影、小横杠
+      root.style.setProperty("--reveal", p.toFixed(3));
+
+      // 白底基本铺满之后，才把内容放出来
+      if (!revealed && (p >= 0.96 || reduceMotion)) {
+        revealed = true;
+        news.classList.add("is-ready");
+      }
+
+      // 滚到新闻页后，右上角按钮换成浅色样式
+      document.body.classList.toggle("on-news", p > 0.62);
+    }
+
+    function onScroll() {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(update);
+      }
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    update();   // 刷新后可能停在中间，先算一次
   })();
 </script>
 
@@ -590,7 +917,9 @@
     title: $("authTitle"), sub: $("authSub"), form: $("authForm"),
     email: $("authEmail"), password: $("authPassword"), submit: $("authSubmit"),
     oauth: $("authOauth"), github: $("authGithub"), msg: $("authMsg"),
-    user: $("authUser"), userEmail: $("authUserEmail"), signout: $("authSignout")
+    user: $("authUser"), userEmail: $("authUserEmail"), signout: $("authSignout"),
+    profileAvatar: $("profileAvatar"), profileName: $("profileName"),
+    nick: $("nickInput"), saveNick: $("authSaveNick")
   };
 
   let supabase = null;
@@ -598,6 +927,7 @@
   let currentUser = null;
   // loading=正在加载库 / ready=可以点了 / failed=加载失败 / unconfigured=没填配置
   let libState = "loading";
+  let lastUserId = null;    // 用来区分"换了个人"和"只是改了资料"
 
   /* ---------------- 面板开合 ---------------- */
   function openPanel(open) {
@@ -727,6 +1057,31 @@
     openPanel(false);
   });
 
+  /* 个人中心：保存昵称
+     存在账号自带的 user_metadata 里，不用建表、不用配 RLS，改完立刻生效。
+     想做成"能被别人看到的公开昵称"，那才需要建 profiles 表 + RLS 策略。 */
+  els.saveNick.addEventListener("click", async function () {
+    if (libState !== "ready" || !supabase) { msg("登录服务还在加载，稍等一下", "warn"); return; }
+
+    const nick = els.nick.value.trim();
+    if (!nick) { msg("昵称不能为空", "error"); return; }
+    if (nick.length > 20) { msg("昵称最多 20 个字", "error"); return; }
+
+    els.saveNick.disabled = true;
+    els.saveNick.textContent = "保存中…";
+    try {
+      const { data, error } = await supabase.auth.updateUser({ data: { nickname: nick } });
+      if (error) throw error;
+      if (data && data.user) renderUser(data.user);
+      msg("昵称已保存", "ok");
+    } catch (err) {
+      msg(zh(err), "error");
+    } finally {
+      els.saveNick.disabled = false;
+      els.saveNick.textContent = "保存昵称";
+    }
+  });
+
   /* 把 Supabase 的英文报错翻成人话 */
   const ERROR_MAP = [
     [/invalid login credentials/i,        "邮箱或密码不正确"],
@@ -746,10 +1101,27 @@
     return raw;
   }
 
+  /* ---------------- 昵称 ---------------- */
+  function nicknameOf(user) {
+    if (!user) return "";
+    const meta = user.user_metadata || {};
+    return String(meta.nickname || meta.full_name || meta.name || "").trim();
+  }
+
+  // 有昵称就用昵称，没设过就退回邮箱 @ 前面那段
+  function displayName(user) {
+    const nick = nicknameOf(user);
+    if (nick) return nick;
+    const email = (user && user.email) || "";
+    return email.indexOf("@") > 0 ? email.split("@")[0] : (email || "已登录");
+  }
+
   /* ---------------- 按登录状态切换界面 ---------------- */
   function renderUser(user) {
     currentUser = user || null;
     const signedIn = !!currentUser;
+    const whoChanged = (currentUser ? currentUser.id : null) !== lastUserId;
+    lastUserId = currentUser ? currentUser.id : null;
 
     els.form.hidden = signedIn;
     els.tabs.hidden = signedIn;
@@ -758,13 +1130,22 @@
     els.avatar.hidden = !signedIn;
 
     if (signedIn) {
-      const email = currentUser.email || "已登录";
-      els.label.textContent = email.indexOf("@") > 0 ? email.split("@")[0] : email;
-      els.avatar.textContent = (email.charAt(0) || "?").toUpperCase();
-      els.title.textContent = "已登录";
-      els.sub.textContent = "欢迎回来";
-      els.userEmail.textContent = email;
-      msg("");
+      const email = currentUser.email || "";
+      const name = displayName(currentUser);
+      const initial = (name.charAt(0) || "?").toUpperCase();
+
+      els.label.textContent = name;
+      els.avatar.textContent = initial;
+      els.profileAvatar.textContent = initial;
+      els.profileName.textContent = name;
+      els.userEmail.textContent = email || "（没有绑定邮箱）";
+      els.title.textContent = "个人中心";
+      els.sub.textContent = "改昵称 / 看账号";
+      // 只在换了人时回填输入框，免得打字打到一半被冲掉
+      if (whoChanged) {
+        els.nick.value = nicknameOf(currentUser);
+        msg("");
+      }
     } else {
       els.label.textContent = "登录";
       setMode(mode);
