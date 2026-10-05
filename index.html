@@ -1584,39 +1584,54 @@
     function encodePath(p) {
       return p.split("/").map(encodeURIComponent).join("/");
     }
-    function rawUrl(p) {
-      return "https://raw.githubusercontent.com/" + NEWS_REPO + "/" + NEWS_BRANCH + "/" + encodePath(p);
-    }
-    function cdnUrl(p) {
-      return "https://cdn.jsdelivr.net/gh/" + NEWS_REPO + "@" + NEWS_BRANCH + "/" + encodePath(p);
-    }
-    // 记住真正加载成功的那个地址，"看原图"时优先用它
-    function imgUrl(im) { return im.loaded || (im.url ? im.url : rawUrl(im.path)); }
-    function imgFallback(im) { return im.url ? "" : cdnUrl(im.path); }
 
-    // 图片先走 raw.githubusercontent，拉不到就换 jsDelivr；
-    // 两个都失败（格式浏览器不支持 / 文件不存在）就留个灰底占位，别显示裂图
+    /* 取仓库里某个文件的地址。
+       顺序很讲究：
+         1. 同源相对路径 —— 页面本身就在 GitHub Pages 上，仓库文件跟 壁纸.png 一样直接取，
+            最快，而且不受 raw.githubusercontent / jsDelivr 在国内被墙的影响。★主力
+         2. raw.githubusercontent —— 只在页面被搬到别处托管时才用得上
+         3. jsDelivr —— 最后的兜底（这个域名在国内时好时坏） */
+    var SOURCES = [
+      function (p) { return "./" + encodePath(p); },
+      function (p) { return "https://raw.githubusercontent.com/" + NEWS_REPO + "/" + NEWS_BRANCH + "/" + encodePath(p); },
+      function (p) { return "https://cdn.jsdelivr.net/gh/" + NEWS_REPO + "@" + NEWS_BRANCH + "/" + encodePath(p); }
+    ];
+    function allUrls(p) { return SOURCES.map(function (f) { return f(p); }); }
+
+    // "看原图"用的地址：优先用真正加载成功过的那个
+    function imgUrl(im) {
+      if (im.url) return im.url;                 // 页面里手写的兜底卡片，地址已给好
+      return im.loaded || SOURCES[0](im.path);
+    }
+
+    // 依次尝试三个源；全失败（文件不存在 / 格式浏览器不支持）就留灰底占位
     function loadImg(img, im) {
-      var failed = 0;
+      if (im.url) { img.src = im.url; return; }
+
+      var urls = im.loaded ? [im.loaded] : allUrls(im.path);
+      var i = 0;
+
       img.onload = function () { im.loaded = img.currentSrc || img.src; };
       img.onerror = function () {
-        failed++;
-        var fb = failed === 1 ? imgFallback(im) : "";
-        if (fb) { img.src = fb; return; }
+        i++;
+        if (i < urls.length) { img.src = urls[i]; return; }
         img.onerror = null;
         img.removeAttribute("src");
         img.classList.add("is-broken");
-        console.warn("[news] 配图加载失败：", im.path || im.url);
+        console.warn("[news] 配图加载失败：", im.path);
       };
-      img.src = imgUrl(im);
+      img.src = urls[0];
     }
 
-    // 二进制（docx 用）：两个源都试
+    // 二进制（docx 用）：同样依次尝试
     async function fetchBuffer(path) {
-      var sources = [rawUrl(path), cdnUrl(path)];
-      for (var i = 0; i < sources.length; i++) {
+      var urls = allUrls(path);
+      for (var i = 0; i < urls.length; i++) {
         try {
-          var r = await fetch(sources[i], { cache: "no-cache" });
+          // 同源的加 no-cache，保证刚改过的正文立刻生效；
+          // 跨源的用普通请求——cache 选项会加自定义头，触发 CORS 预检，
+          // 有些 CDN 对预检不友好，反而会失败
+          var r = await fetch(urls[i], i === 0 ? { cache: "no-cache" } : undefined);
           if (!r.ok) continue;
           return await r.arrayBuffer();
         } catch (e) { /* 换下一个源 */ }
