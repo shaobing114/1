@@ -10,6 +10,8 @@
   :root {
     --text-x: 50%;
     --text-y: 50%;
+    --font-cn: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB",
+               "Noto Sans SC", system-ui, -apple-system, sans-serif;
   }
 
   * {
@@ -17,6 +19,8 @@
     padding: 0;
     box-sizing: border-box;
   }
+
+  [hidden] { display: none !important; }
 
   html, body {
     width: 100%;
@@ -86,8 +90,7 @@
   /* ===== 文字本体 ===== */
   .title {
     position: relative;
-    font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB",
-                 "Noto Sans SC", system-ui, -apple-system, sans-serif;
+    font-family: var(--font-cn);
     font-size: clamp(26px, 6.5vw, 76px);
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -148,6 +151,288 @@
     animation: blink 0.72s steps(1) 4;
   }
 
+  /* ================= 右上角登录入口 ================= */
+  .auth {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 10;
+    font-family: var(--font-cn);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 毛玻璃胶囊按钮 */
+  .auth-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #fff;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    background: rgba(18, 24, 40, 0.42);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.12s ease;
+    animation: dropIn 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) 1.1s both;
+  }
+
+  .auth-btn:hover {
+    background: rgba(30, 40, 66, 0.62);
+    border-color: rgba(255, 255, 255, 0.34);
+  }
+
+  .auth-btn:active { transform: scale(0.97); }
+
+  .auth-btn:focus-visible {
+    outline: 2px solid rgba(140, 200, 255, 0.9);
+    outline-offset: 2px;
+  }
+
+  @keyframes dropIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .auth-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0b1220;
+    background: linear-gradient(140deg, #bfe3ff, #7fc4ff);
+  }
+
+  /* 下拉面板 */
+  .auth-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(322px, calc(100vw - 36px));
+    padding: 18px;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 16px;
+    background: rgba(14, 19, 32, 0.66);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    transform-origin: top right;
+  }
+
+  .auth.open .auth-panel {
+    display: block;
+    animation: panelIn 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .auth-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .auth-title { font-size: 16px; font-weight: 700; }
+
+  .auth-sub {
+    margin-top: 3px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .auth-close {
+    padding: 4px;
+    font-size: 17px;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    transition: 0.18s;
+  }
+
+  .auth-close:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+
+  /* 登录 / 注册 切换 */
+  .auth-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .auth-tab {
+    flex: 1;
+    padding: 7px 0;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.62);
+    cursor: pointer;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    transition: 0.18s;
+  }
+
+  .auth-tab.is-active {
+    color: #0b1220;
+    background: linear-gradient(140deg, #eaf4ff, #b9dcff);
+  }
+
+  .auth-form { display: flex; flex-direction: column; gap: 11px; }
+
+  .auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.66);
+  }
+
+  .auth-field input {
+    height: 38px;
+    padding: 0 11px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    transition: border-color 0.18s, background 0.18s;
+  }
+
+  .auth-field input::placeholder { color: rgba(255, 255, 255, 0.34); }
+
+  .auth-field input:focus {
+    outline: none;
+    border-color: rgba(140, 200, 255, 0.75);
+    background: rgba(255, 255, 255, 0.11);
+  }
+
+  .auth-submit {
+    height: 40px;
+    margin-top: 3px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #0b1220;
+    cursor: pointer;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(140deg, #eaf4ff, #a8d4ff);
+    box-shadow: 0 6px 18px rgba(120, 190, 255, 0.28);
+    transition: filter 0.18s, transform 0.12s;
+  }
+
+  .auth-submit:hover { filter: brightness(1.06); }
+  .auth-submit:active { transform: scale(0.985); }
+  .auth-submit:disabled { opacity: 0.55; cursor: default; filter: none; transform: none; }
+
+  /* GitHub 登录 */
+  .auth-or {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 13px 0 11px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.42);
+  }
+
+  .auth-or::before,
+  .auth-or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .auth-gh {
+    width: 100%;
+    height: 38px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    transition: 0.18s;
+  }
+
+  .auth-gh:hover { background: rgba(255, 255, 255, 0.14); }
+
+  /* 提示信息 */
+  .auth-msg {
+    margin-top: 11px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .auth-msg:empty { display: none; }
+  .auth-msg.is-error { color: #ffb4b4; }
+  .auth-msg.is-ok    { color: #9ff0c4; }
+  .auth-msg.is-warn  { color: #ffd89b; }
+
+  /* 已登录状态 */
+  .auth-user { display: flex; flex-direction: column; gap: 11px; }
+
+  .auth-user-email {
+    font-size: 12px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.62);
+    word-break: break-all;
+  }
+
+  .auth-signout {
+    height: 38px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    transition: 0.18s;
+  }
+
+  .auth-signout:hover {
+    background: rgba(255, 120, 120, 0.18);
+    border-color: rgba(255, 140, 140, 0.42);
+  }
+
+  @media (max-width: 480px) {
+    .auth { top: 14px; right: 14px; }
+    .auth-btn { height: 36px; padding: 0 13px; font-size: 13px; }
+  }
+
   /* 尊重系统的“减少动态效果”偏好 */
   @media (prefers-reduced-motion: reduce) {
     .bg      { animation: none; opacity: 1; transform: none; filter: none; }
@@ -155,6 +440,8 @@
     .title   { animation: none; opacity: 1; }
     .char    { animation: none; opacity: 1; transform: none; }
     .cursor  { animation: none; }
+    .auth-btn { animation: none; }
+    .auth.open .auth-panel { animation: none; }
   }
 </style>
 </head>
@@ -169,7 +456,55 @@
     </h1>
   </div>
 
+  <!-- ================= 右上角登录入口 ================= -->
+  <div class="auth" id="auth">
+    <button class="auth-btn" id="authBtn" type="button" aria-haspopup="dialog" aria-expanded="false">
+      <span class="auth-avatar" id="authAvatar" hidden></span>
+      <span id="authLabel">登录</span>
+    </button>
+
+    <div class="auth-panel" id="authPanel" role="dialog" aria-label="账号">
+      <div class="auth-head">
+        <div>
+          <div class="auth-title" id="authTitle">登录</div>
+          <div class="auth-sub" id="authSub">用邮箱和密码登录</div>
+        </div>
+        <button class="auth-close" id="authClose" type="button" aria-label="关闭">&times;</button>
+      </div>
+
+      <div class="auth-tabs" id="authTabs">
+        <button class="auth-tab is-active" type="button" data-mode="signin">登录</button>
+        <button class="auth-tab" type="button" data-mode="signup">注册</button>
+      </div>
+
+      <form class="auth-form" id="authForm" novalidate>
+        <label class="auth-field">
+          <span>邮箱</span>
+          <input type="email" id="authEmail" autocomplete="email" placeholder="you@example.com">
+        </label>
+        <label class="auth-field">
+          <span>密码</span>
+          <input type="password" id="authPassword" autocomplete="current-password" placeholder="至少 6 位">
+        </label>
+        <button class="auth-submit" id="authSubmit" type="submit">登录</button>
+      </form>
+
+      <div class="auth-oauth" id="authOauth" hidden>
+        <div class="auth-or"><span>或</span></div>
+        <button class="auth-gh" id="authGithub" type="button">使用 GitHub 登录</button>
+      </div>
+
+      <div class="auth-msg" id="authMsg" role="status" aria-live="polite"></div>
+
+      <div class="auth-user" id="authUser" hidden>
+        <div class="auth-user-email" id="authUserEmail"></div>
+        <button class="auth-signout" id="authSignout" type="button">退出登录</button>
+      </div>
+    </div>
+  </div>
+
 <script>
+  /* ================= 逐字打字动画 ================= */
   (function () {
     var TEXT = "你好，我是烧饼114";
     var SPEED = 110;        // 每个字的间隔（毫秒），越小越快
@@ -203,6 +538,272 @@
     }
 
     setTimeout(next, START_DELAY);
+  })();
+</script>
+
+<script type="module">
+  /* ================================================================
+     Supabase 登录配置 —— 只需要改这三行
+     ================================================================
+     SUPABASE_URL / SUPABASE_ANON_KEY 去哪找：
+       Supabase 控制台 → 你的项目 → Project Settings → API
+       - Project URL          → 填到 SUPABASE_URL
+       - anon / publishable key → 填到 SUPABASE_ANON_KEY
+
+     关于安全：anon key 本来就是给浏览器用的公开密钥，
+     放在前端不算泄密；真正的权限由数据库的 RLS 策略控制。
+     千万不要把 service_role key 写在这里！
+     ================================================================ */
+  const SUPABASE_URL = "";        // 例：https://abcdefghijk.supabase.co
+  const SUPABASE_ANON_KEY = "";   // 例：eyJhbGciOiJIUzI1NiIsInR5cCI6...
+  const ENABLE_GITHUB_OAUTH = false;  // 想用「GitHub 登录」就改成 true
+
+  /* supabase-js 的加载地址：先试 ESM，全不通再退回官方文档里的 UMD 全局脚本。
+     多写几个是防止某个 CDN 被墙 —— 任何一个能通就能用。 */
+  const ESM_SOURCES = [
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm",
+    "https://esm.sh/@supabase/supabase-js@2"
+  ];
+  const UMD_SOURCES = [
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+    "https://unpkg.com/@supabase/supabase-js@2"
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    auth: $("auth"), btn: $("authBtn"), label: $("authLabel"), avatar: $("authAvatar"),
+    panel: $("authPanel"), close: $("authClose"), tabs: $("authTabs"),
+    title: $("authTitle"), sub: $("authSub"), form: $("authForm"),
+    email: $("authEmail"), password: $("authPassword"), submit: $("authSubmit"),
+    oauth: $("authOauth"), github: $("authGithub"), msg: $("authMsg"),
+    user: $("authUser"), userEmail: $("authUserEmail"), signout: $("authSignout")
+  };
+
+  let supabase = null;
+  let mode = "signin";      // signin | signup
+  let currentUser = null;
+
+  /* ---------------- 面板开合 ---------------- */
+  function openPanel(open) {
+    els.auth.classList.toggle("open", open);
+    els.btn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open && !currentUser && supabase) els.email.focus();
+  }
+
+  els.btn.addEventListener("click", function () {
+    openPanel(!els.auth.classList.contains("open"));
+  });
+
+  els.close.addEventListener("click", function () { openPanel(false); });
+
+  // 点面板外面 / 按 Esc 关闭
+  document.addEventListener("click", function (e) {
+    if (!els.auth.contains(e.target)) openPanel(false);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") openPanel(false);
+  });
+
+  /* ---------------- 小工具 ---------------- */
+  function msg(text, kind) {
+    els.msg.textContent = text || "";
+    els.msg.className = "auth-msg" + (kind ? " is-" + kind : "");
+  }
+
+  function busy(on) {
+    els.submit.disabled = on;
+    els.submit.textContent = on ? "处理中…" : (mode === "signin" ? "登录" : "注册");
+  }
+
+  function setMode(next) {
+    mode = next;
+    Array.prototype.forEach.call(els.tabs.querySelectorAll(".auth-tab"), function (t) {
+      t.classList.toggle("is-active", t.dataset.mode === next);
+    });
+    const signin = next === "signin";
+    els.title.textContent = signin ? "登录" : "注册";
+    els.sub.textContent = signin ? "用邮箱和密码登录" : "注册后需要去邮箱点确认链接";
+    els.submit.textContent = signin ? "登录" : "注册";
+    els.password.setAttribute("autocomplete", signin ? "current-password" : "new-password");
+    msg("");
+  }
+
+  els.tabs.addEventListener("click", function (e) {
+    const tab = e.target.closest(".auth-tab");
+    if (tab) setMode(tab.dataset.mode);
+  });
+
+  /* 把 Supabase 的英文报错翻成人话 */
+  const ERROR_MAP = [
+    [/invalid login credentials/i,        "邮箱或密码不正确"],
+    [/email not confirmed/i,              "邮箱还没确认，先去收件箱点确认链接"],
+    [/user already registered/i,          "这个邮箱已经注册过了，直接登录就行"],
+    [/password should be at least/i,      "密码至少要 6 位"],
+    [/unable to validate email|invalid email/i, "邮箱格式看起来不对"],
+    [/rate limit|too many requests/i,     "操作太频繁了，等几分钟再试"],
+    [/signups not allowed|signup.*disabled/i, "该站点已关闭注册功能"]
+  ];
+
+  function zh(err) {
+    const raw = (err && err.message) ? err.message : String(err || "未知错误");
+    for (let i = 0; i < ERROR_MAP.length; i++) {
+      if (ERROR_MAP[i][0].test(raw)) return ERROR_MAP[i][1];
+    }
+    return raw;
+  }
+
+  /* ---------------- 按登录状态切换界面 ---------------- */
+  function renderUser(user) {
+    currentUser = user || null;
+    const signedIn = !!currentUser;
+
+    els.form.hidden = signedIn;
+    els.tabs.hidden = signedIn;
+    els.oauth.hidden = signedIn || !ENABLE_GITHUB_OAUTH;
+    els.user.hidden = !signedIn;
+    els.avatar.hidden = !signedIn;
+
+    if (signedIn) {
+      const email = currentUser.email || "已登录";
+      els.label.textContent = email.indexOf("@") > 0 ? email.split("@")[0] : email;
+      els.avatar.textContent = (email.charAt(0) || "?").toUpperCase();
+      els.title.textContent = "已登录";
+      els.sub.textContent = "欢迎回来";
+      els.userEmail.textContent = email;
+      msg("");
+    } else {
+      els.label.textContent = "登录";
+      setMode(mode);
+    }
+  }
+
+  /* ---------------- 动态加载 supabase-js ---------------- */
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = function () { resolve(); };
+      s.onerror = function () { reject(new Error("加载失败：" + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function loadLibrary() {
+    // 1) ESM 版
+    for (let i = 0; i < ESM_SOURCES.length; i++) {
+      try {
+        const mod = await import(ESM_SOURCES[i]);
+        if (mod && mod.createClient) return mod.createClient;
+      } catch (err) {
+        /* 这个源不通，试下一个 */
+      }
+    }
+    // 2) UMD 版兜底（模块里的 supabase 变量会遮蔽全局，所以显式写 window.supabase）
+    for (let j = 0; j < UMD_SOURCES.length; j++) {
+      try {
+        await loadScript(UMD_SOURCES[j]);
+        const g = window.supabase;
+        if (g && g.createClient) return g.createClient;
+      } catch (err) {
+        /* 同上 */
+      }
+    }
+    return null;
+  }
+
+  /* ---------------- 启动 ---------------- */
+  (async function initAuth() {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      renderUser(null);
+      els.email.disabled = true;
+      els.password.disabled = true;
+      els.submit.disabled = true;
+      msg("还没配置 Supabase：把 SUPABASE_URL 和 SUPABASE_ANON_KEY 填到 index.html 顶部的配置区就能用了。", "warn");
+      return;
+    }
+
+    const createClient = await loadLibrary();
+    if (!createClient) {
+      els.submit.disabled = true;
+      msg("登录服务加载失败（CDN 可能被拦截），刷新页面重试。", "error");
+      return;
+    }
+
+    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,     // 关掉浏览器再打开还是登录状态
+        autoRefreshToken: true,   // 自动续期
+        detectSessionInUrl: true  // 处理 OAuth 回跳
+      }
+    });
+
+    /* 邮箱 + 密码：登录 / 注册 */
+    els.form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      if (!supabase) return;
+
+      const email = els.email.value.trim();
+      const password = els.password.value;
+
+      if (!email || !password) { msg("请把邮箱和密码都填上", "error"); return; }
+      if (password.length < 6) { msg("密码至少要 6 位", "error"); return; }
+
+      busy(true);
+      msg("");
+      try {
+        if (mode === "signin") {
+          const { error } = await supabase.auth.signInWithPassword({ email: email, password: password });
+          if (error) throw error;
+          msg("登录成功", "ok");
+          openPanel(false);
+        } else {
+          const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: { emailRedirectTo: location.href.split("#")[0] }
+          });
+          if (error) throw error;
+          if (data && data.session) {
+            msg("注册成功，已自动登录", "ok");
+            openPanel(false);
+          } else {
+            msg("注册成功！请去 " + email + " 的收件箱点确认链接", "ok");
+          }
+        }
+      } catch (err) {
+        msg(zh(err), "error");
+      } finally {
+        busy(false);
+      }
+    });
+
+    /* GitHub 登录（需要在 Supabase 后台先开启 GitHub provider） */
+    els.github.addEventListener("click", async function () {
+      if (!supabase) return;
+      msg("");
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: { redirectTo: location.href.split("#")[0] }
+      });
+      if (error) msg(zh(error), "error");
+    });
+
+    /* 退出登录 */
+    els.signout.addEventListener("click", async function () {
+      if (!supabase) return;
+      await supabase.auth.signOut();
+      msg("已退出登录", "ok");
+      openPanel(false);
+    });
+
+    /* 读取已有登录状态，并监听后续变化 */
+    const { data } = await supabase.auth.getSession();
+    renderUser(data && data.session ? data.session.user : null);
+
+    supabase.auth.onAuthStateChange(function (_event, session) {
+      renderUser(session ? session.user : null);
+    });
   })();
 </script>
 
