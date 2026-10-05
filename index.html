@@ -653,6 +653,21 @@
     color: #5c6a80;
   }
 
+  .news-card-date {
+    margin-top: 6px;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: #93a0b5;
+  }
+
+  /* 新闻区的提示行（拉不到列表 / 还没建 news 文件夹时才有字） */
+  .news-hint {
+    margin: -12px 0 22px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #93a0b5;
+  }
+
   /* 滚到新闻页时，右上角按钮从"深色玻璃"换成"白色卡片"，在浅色背景上更清楚 */
   body.on-news .auth-btn {
     color: #16233a;
@@ -736,6 +751,7 @@
   /* 详情页的图：整宽横幅。max-height 限制高度，免得图把正文挤下去。
      想完整显示不裁切，把下面的 object-fit: cover 改成 contain */
   .news-modal-hero {
+    position: relative;      /* 让左右箭头和计数器相对图片定位 */
     aspect-ratio: 16 / 10;
     max-height: 52vh;
     overflow: hidden;
@@ -748,6 +764,95 @@
     height: 100%;
     object-fit: cover;
     object-position: 50% 30%;   /* 裁切往上偏，别切到人物头部 */
+  }
+
+  /* 左右切换配图：箭头用边框画，不依赖字体里有没有 ‹ › */
+  .news-nav {
+    position: absolute;
+    top: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    cursor: pointer;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(12, 18, 30, 0.42);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transform: translateY(-50%);
+    transition: background 0.18s;
+  }
+
+  .news-nav:hover { background: rgba(12, 18, 30, 0.74); }
+
+  .news-nav i {
+    width: 9px;
+    height: 9px;
+    border-top: 2px solid #fff;
+    border-right: 2px solid #fff;
+  }
+
+  .news-nav--prev { left: 12px; }
+  .news-nav--prev i { transform: rotate(-135deg) translate(-1px, -1px); }
+  .news-nav--next { right: 12px; }
+  .news-nav--next i { transform: rotate(45deg) translate(-1px, -1px); }
+
+  .news-counter {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: #fff;
+    border-radius: 99px;
+    background: rgba(12, 18, 30, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* 配图缩略图条 */
+  .news-modal-thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 14px 30px 0;
+  }
+
+  .news-modal-thumbs button {
+    width: 62px;
+    height: 62px;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    background: #eef2f8;
+    transition: border-color 0.18s, transform 0.18s;
+  }
+
+  .news-modal-thumbs button:hover { transform: translateY(-2px); }
+  .news-modal-thumbs button.is-active { border-color: #7fc4ff; }
+
+  .news-modal-thumbs img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .news-modal-date {
+    margin-top: 10px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: #93a0b5;
+    text-align: center;
+  }
+
+  .news-loading {
+    color: #93a0b5;
   }
 
   .news-modal-body { padding: 26px 30px 42px; }
@@ -873,6 +978,7 @@
     <div class="news-grabber" aria-hidden="true"></div>
     <div class="news-inner">
       <h2 class="news-heading">新闻</h2>
+      <div class="news-hint" id="newsHint" hidden></div>
       <div class="news-grid">
 
         <!-- 一条新闻 = 一个圆角方格：图片在上面，文字在下面。
@@ -920,9 +1026,14 @@
     <button class="news-modal-close" id="newsClose" type="button" aria-label="关闭">&times;</button>
     <div class="news-modal-hero">
       <img id="newsModalImg" src="" alt="">
+      <button class="news-nav news-nav--prev" id="newsPrev" type="button" aria-label="上一张配图" hidden><i></i></button>
+      <button class="news-nav news-nav--next" id="newsNext" type="button" aria-label="下一张配图" hidden><i></i></button>
+      <div class="news-counter" id="newsCounter" hidden></div>
     </div>
+    <div class="news-modal-thumbs" id="newsModalThumbs" hidden></div>
     <div class="news-modal-body">
       <h2 class="news-modal-title" id="newsModalTitle"></h2>
+      <div class="news-modal-date" id="newsModalDate" hidden></div>
       <div class="news-modal-text" id="newsModalText"></div>
     </div>
   </div>
@@ -1020,72 +1131,405 @@
 </script>
 
 <script>
-  /* ================= 新闻详情弹层 ================= */
+  /* ================================================================
+     新闻：直接从仓库的 news/ 文件夹读取，不用维护任何清单
+
+     仓库里这样放（示例）：
+       news/20261005没东西写了喵/配图01.jpg
+       news/20261005没东西写了喵/配图02.png
+       news/20261005没东西写了喵/正文.txt
+
+     - 文件夹名 = 8 位日期 + 标题，日期会自动显示在卡片和正文里
+     - 配图按文件名里的数字排序（配图01、配图02…），点开可左右切换
+     - 正文.txt 建议用 UTF-8 保存（存成 GBK 也能认出来）
+     - 原理：用 GitHub 的文件树接口一次拿到整个仓库路径，
+       所以除了丢文件夹，你不需要改任何代码或清单文件
+     ================================================================ */
   (function () {
+    /* ---------------- 配置 ---------------- */
+    var NEWS_REPO = "shaobing114/1";   // 仓库：用户名/仓库名
+    var NEWS_BRANCH = "main";          // 分支名
+    var NEWS_DIR = "news";             // 放新闻的文件夹名
+    var CACHE_KEY = "news-cache-v1";
+    var CACHE_MS = 10 * 60 * 1000;     // 缓存 10 分钟，省着用 GitHub 接口的额度
+
+    var grid = document.querySelector(".news-grid");
+    var hintEl = document.getElementById("newsHint");
+
+    /* ---------------- 地址工具 ---------------- */
+    function encodePath(p) {
+      return p.split("/").map(encodeURIComponent).join("/");
+    }
+    function rawUrl(p) {
+      return "https://raw.githubusercontent.com/" + NEWS_REPO + "/" + NEWS_BRANCH + "/" + encodePath(p);
+    }
+    function cdnUrl(p) {
+      return "https://cdn.jsdelivr.net/gh/" + NEWS_REPO + "@" + NEWS_BRANCH + "/" + encodePath(p);
+    }
+    function imgUrl(im) { return im.url ? im.url : rawUrl(im.path); }
+    function imgFallback(im) { return im.url ? "" : cdnUrl(im.path); }
+
+    // 图片先走 raw.githubusercontent，拉不到就自动换 jsDelivr
+    function loadImg(img, im) {
+      img.onerror = function () {
+        img.onerror = null;
+        var fb = imgFallback(im);
+        if (fb) img.src = fb;
+      };
+      img.src = imgUrl(im);
+    }
+
+    // 文本：两个源都试；顺手兼容 Windows 记事本存成 GBK 的情况
+    async function fetchText(path) {
+      var sources = [rawUrl(path), cdnUrl(path)];
+      for (var i = 0; i < sources.length; i++) {
+        try {
+          var r = await fetch(sources[i], { cache: "no-cache" });
+          if (!r.ok) continue;
+          var buf = await r.arrayBuffer();
+          var txt = new TextDecoder("utf-8").decode(buf);
+          if (txt.indexOf("\uFFFD") >= 0) {
+            try { txt = new TextDecoder("gbk").decode(buf); } catch (e) {}
+          }
+          return txt.replace(/\r\n/g, "\n").trim();
+        } catch (e) { /* 换下一个源 */ }
+      }
+      return "";
+    }
+
+    /* ---------------- 从文件树拼出新闻列表 ---------------- */
+    // "20261005没东西写了喵" → 日期 2026年10月5日 + 标题 没东西写了喵
+    function parseFolder(name) {
+      var m = /^(\d{4})(\d{2})(\d{2})[\s\-_.、]*([\s\S]*)$/.exec(name);
+      if (!m) return { date: "", dateText: "", title: name };
+      return {
+        date: m[1] + "-" + m[2] + "-" + m[3],
+        dateText: m[1] + "年" + parseInt(m[2], 10) + "月" + parseInt(m[3], 10) + "日",
+        title: (m[4] || "").trim() || name
+      };
+    }
+
+    function buildItems(tree) {
+      var map = {};
+
+      tree.forEach(function (node) {
+        if (!node || node.type !== "blob") return;
+        var p = node.path || "";
+        if (p.indexOf(NEWS_DIR + "/") !== 0) return;
+
+        var rest = p.slice(NEWS_DIR.length + 1);
+        var cut = rest.indexOf("/");
+        if (cut < 0) return;                    // 直接丢在 news/ 下的散文件，忽略
+        var folder = rest.slice(0, cut);
+        var file = rest.slice(cut + 1);
+        if (file.indexOf("/") >= 0) return;     // 更深的子目录先不管
+
+        var it = map[folder] || (map[folder] = { key: folder, images: [], textPath: "", textScore: -1 });
+
+        if (/\.(jpe?g|png|webp|gif|avif|bmp)$/i.test(file)) {
+          var n = /(\d+)/.exec(file);
+          it.images.push({ path: p, name: file, num: n ? parseInt(n[1], 10) : 9999 });
+        } else if (/\.(txt|text|md)$/i.test(file)) {
+          // 同时有多个文本时，优先「正文」
+          var score = /正文/.test(file) ? 2 : (/\.txt$/i.test(file) ? 1 : 0);
+          if (score > it.textScore) { it.textScore = score; it.textPath = p; }
+        }
+      });
+
+      var items = Object.keys(map).map(function (k) {
+        var it = map[k];
+        var meta = parseFolder(k);
+        it.title = meta.title;
+        it.date = meta.date;
+        it.dateText = meta.dateText;
+        it.images.sort(function (a, b) { return a.num - b.num || a.name.localeCompare(b.name); });
+        return it;
+      });
+
+      // 有日期的按日期倒序排前面，没日期的排后面
+      items.sort(function (a, b) {
+        if (a.date && b.date) return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0);
+        if (a.date) return -1;
+        if (b.date) return 1;
+        return a.key.localeCompare(b.key);
+      });
+      return items;
+    }
+
+    /* ---------------- 拉文件树（带缓存） ---------------- */
+    function readCache() {
+      try {
+        var raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        var obj = JSON.parse(raw);
+        return obj && obj.items ? obj : null;
+      } catch (e) { return null; }
+    }
+    function writeCache(items) {
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), items: items })); } catch (e) {}
+    }
+
+    async function loadItems() {
+      // 加了新新闻想马上看到：访问「页面地址?refresh=1」就会跳过缓存
+      var bypass = /[?&]refresh/.test(location.search) || location.hash === "#refresh";
+      var cached = bypass ? null : readCache();
+      if (cached && Date.now() - cached.t < CACHE_MS) return cached.items;
+
+      try {
+        var url = "https://api.github.com/repos/" + NEWS_REPO + "/git/trees/" + NEWS_BRANCH + "?recursive=1";
+        var r = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        var data = await r.json();
+        var items = buildItems(data.tree || []);
+        writeCache(items);
+        return items;
+      } catch (e) {
+        console.warn("[news] 拉仓库文件树失败：", e);
+        return cached ? cached.items : null;    // 有旧缓存就先用旧的
+      }
+    }
+
+    function showHint(text) {
+      if (!hintEl) return;
+      hintEl.textContent = text || "";
+      hintEl.hidden = !text;
+    }
+
+    /* ================= 详情弹层 ================= */
     var modal = document.getElementById("newsModal");
-    if (!modal) return;
+    if (!modal || !grid) return;
 
     var backdrop = document.getElementById("newsBackdrop");
     var closeBtn = document.getElementById("newsClose");
     var imgSlot = document.getElementById("newsModalImg");
     var titleSlot = document.getElementById("newsModalTitle");
+    var dateSlot = document.getElementById("newsModalDate");
     var textSlot = document.getElementById("newsModalText");
+    var thumbsEl = document.getElementById("newsModalThumbs");
+    var prevBtn = document.getElementById("newsPrev");
+    var nextBtn = document.getElementById("newsNext");
+    var counterEl = document.getElementById("newsCounter");
+
+    var current = null;
     var lastCard = null;
     var lockedY = 0;
+    var token = 0;
 
     function lockScroll() {
       lockedY = window.pageYOffset || 0;
       document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
     }
-
     function unlockScroll() {
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
       window.scrollTo(0, lockedY);   // 有的浏览器会跳回顶部，这里补回来
     }
 
-    function open(card) {
+    function escapeHtml(s) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // 正文：空行分段，段内单换行变成 <br>
+    function textToHtml(txt) {
+      if (!txt) return '<p class="news-loading">这篇还没有正文——在文件夹里放一个「正文.txt」就会出现。</p>';
+      return txt.split(/\n{2,}/).map(function (block) {
+        return "<p>" + escapeHtml(block).replace(/\n/g, "<br>") + "</p>";
+      }).join("");
+    }
+
+    // 页面里手写的那张卡片没有 __news，就从 DOM 读
+    function itemFromCard(card) {
       var img = card.querySelector(".news-thumb img");
       var title = card.querySelector(".news-card-title");
       var tpl = card.querySelector("template.news-detail");
+      var src = img ? (img.getAttribute("src") || "") : "";
+      return {
+        title: title ? title.textContent : "",
+        dateText: "",
+        images: src ? [{ url: src }] : [],
+        html: tpl ? tpl.innerHTML : "",
+        textPath: ""
+      };
+    }
 
-      imgSlot.src = img ? img.src : "";
-      imgSlot.alt = img ? img.alt : "";
-      titleSlot.textContent = title ? title.textContent : "";
-      textSlot.innerHTML = tpl ? tpl.innerHTML : "";
+    function showImage(i) {
+      if (!current || !current.images.length) {
+        imgSlot.removeAttribute("src");
+        return;
+      }
+      var n = current.images.length;
+      current.idx = ((i % n) + n) % n;
+      loadImg(imgSlot, current.images[current.idx]);
+      imgSlot.alt = current.title;
+
+      var multi = n > 1;
+      if (prevBtn) prevBtn.hidden = !multi;
+      if (nextBtn) nextBtn.hidden = !multi;
+      if (counterEl) {
+        counterEl.hidden = !multi;
+        counterEl.textContent = (current.idx + 1) + " / " + n;
+      }
+      if (thumbsEl) {
+        Array.prototype.forEach.call(thumbsEl.querySelectorAll("button"), function (b, bi) {
+          b.classList.toggle("is-active", bi === current.idx);
+        });
+      }
+    }
+
+    function buildThumbs() {
+      if (!thumbsEl) return;
+      thumbsEl.innerHTML = "";
+      var multi = current && current.images.length > 1;
+      thumbsEl.hidden = !multi;
+      if (!multi) return;
+
+      current.images.forEach(function (im, i) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "thumb" + (i === current.idx ? " is-active" : "");
+        b.setAttribute("aria-label", "第 " + (i + 1) + " 张配图");
+        var t = document.createElement("img");
+        t.alt = "";
+        t.loading = "lazy";
+        loadImg(t, im);
+        b.appendChild(t);
+        b.addEventListener("click", function () { showImage(i); });
+        thumbsEl.appendChild(b);
+      });
+    }
+
+    async function openNews(card) {
+      var item = card.__news || itemFromCard(card);
+      var my = ++token;                      // 这一轮的编号
+
+      current = {
+        title: item.title,
+        dateText: item.dateText || "",
+        images: item.images || [],
+        idx: 0,
+        textPath: item.textPath || "",
+        html: item.html || ""
+      };
+
+      titleSlot.textContent = current.title;
+      if (dateSlot) {
+        dateSlot.textContent = current.dateText;
+        dateSlot.hidden = !current.dateText;
+      }
+      buildThumbs();
+      showImage(0);
+      textSlot.innerHTML = current.textPath
+        ? '<p class="news-loading">正在读取正文…</p>'
+        : current.html;
 
       lastCard = card;
       modal.classList.add("open");
       modal.setAttribute("aria-hidden", "false");
       lockScroll();
       closeBtn.focus();
+
+      if (current.textPath) {
+        var path = current.textPath;
+        var txt = await fetchText(path);
+        if (my !== token) return;            // 期间关了或换了别的新闻，就别往页面上写了
+        textSlot.innerHTML = textToHtml(txt);
+      }
     }
 
-    function close() {
+    function closeNews() {
       if (!modal.classList.contains("open")) return;
+      token++;                               // 作废还在路上的正文请求
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
       unlockScroll();
-      if (lastCard) lastCard.focus();   // 焦点还回卡片，键盘用户不会迷路
+      if (lastCard) lastCard.focus();        // 焦点还回卡片，键盘用户不迷路
     }
 
-    // 卡片：点击 / 回车 / 空格 都能打开
-    Array.prototype.forEach.call(document.querySelectorAll(".news-card"), function (card) {
-      card.addEventListener("click", function () { open(card); });
-      card.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
-          e.preventDefault();
-          open(card);
-        }
+    /* ---------------- 卡片 ---------------- */
+    function bindCards() {
+      Array.prototype.forEach.call(document.querySelectorAll(".news-card"), function (card) {
+        if (card.__bound) return;
+        card.__bound = true;
+        card.addEventListener("click", function () { openNews(card); });
+        card.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+            e.preventDefault();
+            openNews(card);
+          }
+        });
       });
+    }
+
+    function makeCard(item) {
+      var card = document.createElement("article");
+      card.className = "news-card";
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("aria-label", "打开新闻：" + item.title);
+
+      var thumb = document.createElement("div");
+      thumb.className = "news-thumb";
+      var img = document.createElement("img");
+      img.alt = item.title;
+      img.loading = "lazy";
+      if (item.images.length) loadImg(img, item.images[0]);
+      thumb.appendChild(img);
+
+      var body = document.createElement("div");
+      body.className = "news-body";
+      var h3 = document.createElement("h3");
+      h3.className = "news-card-title";
+      h3.textContent = item.title;
+      body.appendChild(h3);
+      if (item.dateText) {
+        var d = document.createElement("div");
+        d.className = "news-card-date";
+        d.textContent = item.dateText;
+        body.appendChild(d);
+      }
+
+      card.appendChild(thumb);
+      card.appendChild(body);
+      card.__news = item;      // 弹层直接从这里取数据
+      return card;
+    }
+
+    /* ---------------- 事件 ---------------- */
+    if (backdrop) backdrop.addEventListener("click", closeNews);
+    if (closeBtn) closeBtn.addEventListener("click", closeNews);
+    if (prevBtn) prevBtn.addEventListener("click", function () { showImage(current.idx - 1); });
+    if (nextBtn) nextBtn.addEventListener("click", function () { showImage(current.idx + 1); });
+
+    document.addEventListener("keydown", function (e) {
+      if (!modal.classList.contains("open")) return;
+      if (e.key === "Escape") { closeNews(); return; }
+      if (!current) return;
+      if (e.key === "ArrowLeft") showImage(current.idx - 1);
+      if (e.key === "ArrowRight") showImage(current.idx + 1);
     });
 
-    if (backdrop) backdrop.addEventListener("click", close);
-    if (closeBtn) closeBtn.addEventListener("click", close);
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") close();
-    });
+    /* ---------------- 启动 ---------------- */
+    bindCards();   // 先让页面里手写的那张卡片可以点
+
+    (async function init() {
+      var items = await loadItems();
+
+      if (items === null) {
+        showHint("新闻列表暂时拉不到（可能是 GitHub 接口限流或网络不通），刷新一下再看看。");
+        return;
+      }
+      if (!items.length) {
+        showHint("还没检测到新闻。在仓库里建一个 " + NEWS_DIR + "/日期+标题/ 这样的文件夹，" +
+                 "里面放「配图01.jpg」和「正文.txt」，这里就会自动出现。");
+        return;
+      }
+
+      showHint("");
+      grid.innerHTML = "";
+      items.forEach(function (it) { grid.appendChild(makeCard(it)); });
+      bindCards();
+    })();
   })();
 </script>
 
