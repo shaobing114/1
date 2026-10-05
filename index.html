@@ -1090,7 +1090,8 @@
     box-shadow: 0 18px 40px rgba(16, 51, 58, 0.14);
   }
 
-  /* 图标底用深色：这两个 logo 都是白色的，浅底上会看不见 */
+  /* 图标底统一用黑色：白色的 logo 在浅底上会隐形，
+     而卡拉彼丘那个 logo 自带黑底，用黑底才能跟它无缝接上 */
   .game-icon {
     position: relative;
     display: flex;
@@ -1101,8 +1102,8 @@
     padding: 12px;
     overflow: hidden;
     border-radius: 24px;
-    background: linear-gradient(150deg, #164a4e, #0d3236);
-    box-shadow: 0 6px 16px rgba(16, 51, 58, 0.18);
+    background: #000;
+    box-shadow: 0 6px 16px rgba(16, 51, 58, 0.2);
   }
 
   .game-icon img {
@@ -1117,6 +1118,11 @@
   /* 整张照片类的图就用 cover 铺满 */
   .game-icon--cover { padding: 0; }
   .game-icon--cover img { object-fit: cover; }
+
+  /* 竖长条 / 横长条的图标：把格子也拉长，不然缩在方格里太小。
+     加这两个类是加载完图片后按实际宽高比自动判断的 */
+  .game-icon--tall { height: 132px; }
+  .game-icon--wide { width: 132px; }
 
   /* 图还没传上来时显示的字母占位 */
   .game-icon-fallback {
@@ -1345,7 +1351,7 @@
         <article class="game-card">
           <div class="game-icon">
             <span class="game-icon-fallback">战</span>
-            <img src="./games/1战争雷霆/WTlogo.png" alt="战争雷霆">
+            <img src="./games/1战争雷霆/图标.png" alt="战争雷霆">
           </div>
           <h3 class="game-title">战争雷霆</h3>
           <div class="game-links">
@@ -1518,12 +1524,30 @@
     update();   // 刷新后可能停在中间，先算一次
   })();
 
-  /* ================= 游戏图标：图没传就用字母占位 ================= */
+  /* ================= 游戏图标：没图才显示字母占位 ================= */
   (function () {
     Array.prototype.forEach.call(document.querySelectorAll(".game-icon img"), function (img) {
-      function fallback() { img.hidden = true; }
-      img.addEventListener("error", fallback);
-      if (img.complete && img.naturalWidth === 0) fallback();   // 已经失败过的
+      var box = img.parentNode;
+      var fb = box.querySelector(".game-icon-fallback");
+
+      function showLetter() { img.hidden = true; if (fb) fb.hidden = false; }
+      function hideLetter() {
+        if (fb) fb.hidden = true;              // 图加载出来就把字母藏掉
+        fitBox();
+      }
+      // 竖长条/横长条的图标，把格子也拉长，否则缩在方格里太小
+      function fitBox() {
+        if (!img.naturalWidth) return;
+        var r = img.naturalHeight / img.naturalWidth;
+        if (r > 1.35) box.classList.add("game-icon--tall");
+        else if (r < 0.7) box.classList.add("game-icon--wide");
+      }
+
+      img.addEventListener("error", showLetter);
+      img.addEventListener("load", hideLetter);
+      if (img.complete) {                    // 已经加载完（或已失败）的
+        if (img.naturalWidth === 0) showLetter(); else hideLetter();
+      }
     });
   })();
 </script>
@@ -1942,7 +1966,14 @@
         var img = document.createElement("img");
         img.alt = g.title;
         img.loading = "lazy";
-        img.addEventListener("error", function () { img.hidden = true; });   // 图挂了就露出字母
+        img.addEventListener("error", function () { img.hidden = true; fb.hidden = false; });
+        img.addEventListener("load", function () {
+          fb.hidden = true;                                   // 图出来了就藏掉字母
+          // 竖长条 / 横长条的图标，把格子也拉长
+          var r = img.naturalHeight / img.naturalWidth;
+          if (r > 1.35) icon.classList.add("game-icon--tall");
+          else if (r < 0.7) icon.classList.add("game-icon--wide");
+        });
         img.src = "./" + encodePath(g.icon.path);
         icon.appendChild(img);
       }
