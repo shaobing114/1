@@ -291,6 +291,9 @@
     right: 0;
     width: min(322px, calc(100vw - 36px));
     padding: 18px;
+    max-height: calc(100vh - 90px);   /* 第三方登录开多了也不会超出屏幕 */
+    overflow-y: auto;
+    overscroll-behavior: contain;
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 16px;
@@ -439,7 +442,18 @@
     background: rgba(255, 255, 255, 0.14);
   }
 
+  /* 第三方登录按钮：由 JS 按后台开启情况生成 */
+  .auth-providers {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
   .auth-gh {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     width: 100%;
     height: 38px;
     font-family: inherit;
@@ -454,6 +468,22 @@
   }
 
   .auth-gh:hover { background: rgba(255, 255, 255, 0.14); }
+
+  /* 小圆点当商标：底色用该服务的品牌色，字色按亮度自动选黑或白。
+     加一圈淡边，免得 GitHub/Apple 这种黑色圆点在深色面板上看不见 */
+  .provider-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+  }
 
   /* 提示信息 */
   .auth-msg {
@@ -1264,6 +1294,219 @@
     .game-card { width: 100%; }
   }
 
+  /* ================= 神秘小黑屋（登录后才显示） ================= */
+  .vault {
+    position: relative;
+    z-index: 7;                /* 比游戏页(6)更高，滚上来盖住它 */
+    min-height: 100vh;
+    padding: 0 22px 90px;
+    background: #171a24;
+    color: #e8ecf3;
+    font-family: var(--font-cn);
+    border-radius: calc((1 - var(--reveal, 0)) * 30px)
+                   calc((1 - var(--reveal, 0)) * 30px) 0 0;
+    box-shadow: 0 calc(var(--reveal, 0) * -6px) 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .vault-grabber {
+    width: 46px;
+    height: 5px;
+    margin: 0 auto;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateY(14px);
+    opacity: calc(1 - var(--reveal, 0) * 0.7);
+  }
+
+  .vault-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding-top: 74px;
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.55s ease 0.1s, transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s;
+  }
+
+  .vault.is-ready .vault-inner { opacity: 1; transform: none; }
+
+  .vault-heading {
+    font-size: clamp(30px, 5vw, 46px);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #f4f7fc;
+  }
+
+  .vault-heading::after {
+    content: "";
+    display: block;
+    width: 52px;
+    height: 4px;
+    margin-top: 14px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #8b7cf6, #c4b5fd);
+  }
+
+  .vault-sub {
+    margin: 18px 0 34px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #98a3b8;
+  }
+
+  .vault-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 13px;
+  }
+
+  .vault-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    cursor: pointer;
+    border: 0;
+    border-radius: 99px;
+    background: linear-gradient(135deg, #6d5ce7, #9b7ff0);
+    box-shadow: 0 10px 28px rgba(109, 92, 231, 0.38);
+    transition: transform 0.14s, box-shadow 0.22s, filter 0.2s;
+  }
+
+  .vault-btn:hover {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 15px 36px rgba(109, 92, 231, 0.52);
+  }
+
+  .vault-btn:active { transform: translateY(0) scale(0.98); }
+
+  .vault-btn:focus-visible {
+    outline: 2px solid rgba(196, 181, 253, 0.9);
+    outline-offset: 3px;
+  }
+
+  .vault-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    flex: 0 0 auto;
+  }
+
+  .vault-tip {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #7b8698;
+  }
+
+  /* 群号弹窗 */
+  .group-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 210;              /* 盖过新闻弹层(100)和灯箱(200) */
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+  }
+
+  .group-modal.open { display: flex; }
+
+  .group-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(6, 10, 18, 0.74);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeIn 0.22s ease both;
+  }
+
+  .group-modal-card {
+    position: relative;
+    width: min(360px, 100%);
+    padding: 28px 26px 24px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    background: #1e2230;
+    color: #eef2f8;
+    font-family: var(--font-cn);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    animation: modalIn 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  .group-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    font-family: inherit;
+    font-size: 18px;
+    line-height: 1;
+    color: #98a3b8;
+    cursor: pointer;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    transition: 0.18s;
+  }
+
+  .group-modal-close:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+
+  .group-modal-label { font-size: 13px; color: #98a3b8; }
+
+  .group-modal-number {
+    margin: 12px 0 8px;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+    color: #c4b5fd;
+    word-break: break-all;
+  }
+
+  /* 群号还没填的时候显示成一句普通提示 */
+  .group-modal-number.is-empty {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: #7b8698;
+  }
+
+  .group-modal-note {
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #7b8698;
+  }
+
+  .group-copy {
+    width: 100%;
+    height: 42px;
+    margin-top: 18px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: #171a24;
+    cursor: pointer;
+    border: 0;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #c4b5fd, #a78bfa);
+    transition: filter 0.18s, transform 0.12s;
+  }
+
+  .group-copy:hover { filter: brightness(1.06); }
+  .group-copy:active { transform: scale(0.985); }
+  .group-copy:disabled { opacity: 0.4; cursor: default; filter: none; transform: none; }
+
   /* ================================================================
      深色模式
      由右上角那个圆形按钮切换，选择记在 localStorage 的 "theme" 里。
@@ -1356,6 +1599,10 @@
 
   html.dark .game-link--muted:hover { background: rgba(255, 255, 255, 0.07); }
 
+  /* ---------- 神秘小黑屋：本来就是深色，深色模式下再压暗一点 ---------- */
+  html.dark .vault { background: #12151d; }
+  html.dark .group-modal-card { background: #191d29; }
+
   /* ---------- 图加载失败时的灰底占位，深色版 ---------- */
   html.dark .news-thumb img.is-broken,
   html.dark .news-modal-hero img.is-broken,
@@ -1378,7 +1625,9 @@
     .news-inner, .news-card { transition: none; opacity: 1; transform: none; }
     .news-modal-backdrop, .news-modal-card { animation: none; }
     .games-inner, .game-card { transition: none; opacity: 1; transform: none; }
+    .vault-inner { transition: none; opacity: 1; transform: none; }
     .lightbox-backdrop, .lightbox-img { animation: none; }
+    .group-modal-backdrop, .group-modal-card { animation: none; }
   }
 </style>
 <script>
@@ -1449,9 +1698,11 @@
         <button class="auth-submit" id="authSubmit" type="submit">登录</button>
       </form>
 
+      <!-- 第三方登录按钮不写死：启动时读 Supabase 的设置，
+           后台开了哪些 provider，这里就自动出现哪些按钮 -->
       <div class="auth-oauth" id="authOauth" hidden>
         <div class="auth-or"><span>或</span></div>
-        <button class="auth-gh" id="authGithub" type="button">使用 GitHub 登录</button>
+        <div class="auth-providers" id="authProviders"></div>
       </div>
 
       <div class="auth-msg" id="authMsg" role="status" aria-live="polite"></div>
@@ -1582,6 +1833,110 @@
     </div>
   </main>
 
+  <!-- ===== 神秘小黑屋（登录后才显示，未登录时整块隐藏） ===== -->
+  <main class="vault" id="vault" data-reveal hidden>
+    <div class="vault-grabber" aria-hidden="true"></div>
+    <div class="vault-inner">
+      <h2 class="vault-heading">神秘小黑屋</h2>
+      <p class="vault-sub">登录之后才看得到的地方。这里没什么神秘的，就是粉丝群入口。</p>
+      <div class="vault-body">
+        <button class="vault-btn" id="groupBtn" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm7.5 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6v1H2v-1zm15.6-5.4c2.6.5 4.4 2.3 4.4 4.4v1h-5.2v-1c0-1.7-.7-3.2-1.9-4.3.9-.1 1.8-.2 2.7-.1z"/>
+          </svg>
+          加入粉丝群
+        </button>
+        <p class="vault-tip">点上面的按钮看群号</p>
+      </div>
+    </div>
+  </main>
+
+<!-- ===== 群号弹窗 ===== -->
+<div class="group-modal" id="groupModal" role="dialog" aria-modal="true"
+     aria-labelledby="groupModalTitle" aria-hidden="true">
+  <div class="group-modal-backdrop" id="groupBackdrop"></div>
+  <div class="group-modal-card">
+    <button class="group-modal-close" id="groupClose" type="button" aria-label="关闭">&times;</button>
+    <div class="group-modal-label" id="groupModalTitle">粉丝群号</div>
+    <div class="group-modal-number" id="groupNumber"></div>
+    <div class="group-modal-note" id="groupNote"></div>
+    <button class="group-copy" id="groupCopy" type="button">复制群号</button>
+  </div>
+</div>
+
+<script>
+  /* ================================================================
+     神秘小黑屋：粉丝群入口
+     ★ 群号就填在下面 GROUP.number 里，填完保存上传就行。
+       留空的话弹窗会显示"群号还没填"，不会出丑。
+     ================================================================ */
+  (function () {
+    const GROUP = {
+      number: "",                              // ← 群号填这里，例如 "123456789"
+      note: "加群请说明是从主页来的～"            // ← 备注 / 加群须知，不想要就留空
+    };
+
+    const modal = document.getElementById("groupModal");
+    const openBtn = document.getElementById("groupBtn");
+    const closeBtn = document.getElementById("groupClose");
+    const backdrop = document.getElementById("groupBackdrop");
+    const numEl = document.getElementById("groupNumber");
+    const noteEl = document.getElementById("groupNote");
+    const copyBtn = document.getElementById("groupCopy");
+    if (!modal || !openBtn) return;
+
+    const number = String(GROUP.number).trim();
+    const hasNumber = number.length > 0;
+    let lockedY = 0;
+
+    function openGroup() {
+      numEl.textContent = hasNumber ? number : "群号还没填";
+      numEl.classList.toggle("is-empty", !hasNumber);
+      noteEl.textContent = hasNumber ? (GROUP.note || "") : "等我填上再来～";
+      copyBtn.disabled = !hasNumber;
+      copyBtn.textContent = "复制群号";
+
+      lockedY = window.pageYOffset || 0;
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+      (hasNumber ? copyBtn : closeBtn).focus();
+    }
+
+    function closeGroup() {
+      if (!modal.classList.contains("open")) return;
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, lockedY);
+      openBtn.focus();
+    }
+
+    openBtn.addEventListener("click", openGroup);
+    if (closeBtn) closeBtn.addEventListener("click", closeGroup);
+    if (backdrop) backdrop.addEventListener("click", closeGroup);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && modal.classList.contains("open")) closeGroup();
+    });
+
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async function () {
+        if (!hasNumber) return;
+        try {
+          await navigator.clipboard.writeText(number);
+          copyBtn.textContent = "已复制 ✓";
+        } catch (err) {
+          copyBtn.textContent = "复制失败，长按选中吧";
+        }
+        setTimeout(function () { copyBtn.textContent = "复制群号"; }, 1800);
+      });
+    }
+  })();
+</script>
+
 <noscript>
   <style>
     .news-inner, .news-card, .games-inner, .game-card {
@@ -1679,6 +2034,10 @@
       var onLight = false;
 
       sections.forEach(function (sec) {
+        // 被隐藏的区块（比如没登录时的小黑屋）不参与，
+        // 否则 display:none 会让它的位置量出来是 0，误判成"已经铺满"
+        if (sec.hidden) return;
+
         // 0 = 这块还在视口下方；1 = 它的上边缘已贴到视口顶部（底色铺满）
         var top = sec.getBoundingClientRect().top;
         var p = (vh - top) / vh;
@@ -2637,7 +2996,8 @@
      ================================================================ */
   const SUPABASE_URL = "https://zowfbpbwqnikxmcmjwfr.supabase.co";  // 已填好
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_c7PYeDklxVVRtG5W1JUpmQ_7emESIWH";  // 已填好
-  const ENABLE_GITHUB_OAUTH = false;     // 想用「GitHub 登录」就改成 true
+  /* 第三方登录（Google / GitHub / Discord…）不用在这里配置：
+     页面启动时读一次 Supabase 的设置，你在后台开启哪些，这里就自动出现哪些按钮。 */
 
   /* 【可选·国内网络不稳时的终极解法】
      用浏览器打开 https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm
@@ -2663,7 +3023,7 @@
     panel: $("authPanel"), close: $("authClose"), tabs: $("authTabs"),
     title: $("authTitle"), sub: $("authSub"), form: $("authForm"),
     email: $("authEmail"), password: $("authPassword"), submit: $("authSubmit"),
-    oauth: $("authOauth"), github: $("authGithub"), msg: $("authMsg"),
+    oauth: $("authOauth"), providers: $("authProviders"), msg: $("authMsg"),
     user: $("authUser"), userEmail: $("authUserEmail"), signout: $("authSignout"),
     profileAvatar: $("profileAvatar"), profileName: $("profileName"),
     nick: $("nickInput"), saveNick: $("authSaveNick")
@@ -2675,6 +3035,9 @@
   // loading=正在加载库 / ready=可以点了 / failed=加载失败 / unconfigured=没填配置
   let libState = "loading";
   let lastUserId = null;    // 用来区分"换了个人"和"只是改了资料"
+  let signupNeedsConfirm = true;   // 由 Supabase 的设置同步过来
+  let emailEnabled = true;         // 后台有没有开邮箱密码登录
+  const vaultEl = document.getElementById("vault");   // 神秘小黑屋那块
 
   /* ---------------- 面板开合 ---------------- */
   function openPanel(open) {
@@ -2730,7 +3093,9 @@
     });
     const signin = next === "signin";
     els.title.textContent = signin ? "登录" : "注册";
-    els.sub.textContent = signin ? "用邮箱和密码登录" : "注册后需要去邮箱点确认链接";
+    els.sub.textContent = signin
+      ? "用邮箱和密码登录"
+      : (signupNeedsConfirm ? "注册后需要去邮箱点确认链接" : "注册后直接就能用");
     els.password.setAttribute("autocomplete", signin ? "current-password" : "new-password");
     // 加载中 / 出错时的提示不要被清掉
     if (libState === "ready") msg("");
@@ -2787,15 +3152,79 @@
     }
   });
 
-  els.github.addEventListener("click", async function () {
+  /* ---------------- 第三方登录：按钮按后台实际开启的 provider 生成 ---------------- */
+  // 常见服务的品牌色 + 小圆点里显示的字
+  const PROVIDERS = {
+    github:        { name: "GitHub",    color: "#24292f", short: "GH" },
+    google:        { name: "Google",    color: "#4285f4", short: "G" },
+    discord:       { name: "Discord",   color: "#5865f2", short: "D" },
+    apple:         { name: "Apple",     color: "#1c1c1e", short: "" },
+    gitlab:        { name: "GitLab",    color: "#fc6d26", short: "GL" },
+    facebook:      { name: "Facebook",  color: "#1877f2", short: "f" },
+    twitter:       { name: "X",         color: "#000000", short: "X" },
+    twitch:        { name: "Twitch",    color: "#9146ff", short: "T" },
+    spotify:       { name: "Spotify",   color: "#1db954", short: "S" },
+    slack:         { name: "Slack",     color: "#4a154b", short: "S" },
+    slack_oidc:    { name: "Slack",     color: "#4a154b", short: "S" },
+    notion:        { name: "Notion",    color: "#111111", short: "N" },
+    linkedin_oidc: { name: "LinkedIn",  color: "#0a66c2", short: "in" },
+    linkedin:      { name: "LinkedIn",  color: "#0a66c2", short: "in" },
+    azure:         { name: "Microsoft", color: "#0078d4", short: "MS" },
+    bitbucket:     { name: "Bitbucket", color: "#0052cc", short: "B" },
+    figma:         { name: "Figma",     color: "#f24e1e", short: "F" },
+    kakao:         { name: "Kakao",     color: "#fee500", short: "K" },
+    keycloak:      { name: "Keycloak",  color: "#008aaa", short: "KC" },
+    workos:        { name: "WorkOS",    color: "#6363f1", short: "W" },
+    zoom:          { name: "Zoom",      color: "#2d8cff", short: "Z" },
+    snapchat:      { name: "Snapchat",  color: "#fffc00", short: "S" }
+  };
+
+  let providerCount = 0;   // 后台开了几个第三方登录
+
+  // 亮色底的圆点要用深色字，否则看不清
+  function readableOn(hex) {
+    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || "");
+    if (!m) return "#fff";
+    const [r, g, b] = [1, 2, 3].map(function (i) { return parseInt(m[i], 16); });
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#141414" : "#ffffff";
+  }
+
+  async function signInWith(provider) {
     if (libState !== "ready" || !supabase) { msg("登录服务还在加载，稍等一下", "warn"); return; }
     msg("");
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "github",
+      provider: provider,
       options: { redirectTo: location.href.split("#")[0] }
     });
     if (error) msg(zh(error), "error");
-  });
+  }
+
+  function renderProviders(ids) {
+    if (!els.providers) return;
+    els.providers.innerHTML = "";
+    providerCount = ids.length;
+
+    ids.forEach(function (id) {
+      const p = PROVIDERS[id] || { name: id, color: "#666666", short: id.charAt(0).toUpperCase() };
+
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "auth-gh";
+
+      const dot = document.createElement("span");
+      dot.className = "provider-dot";
+      dot.style.background = p.color;
+      dot.style.color = readableOn(p.color);
+      dot.textContent = p.short;
+
+      b.appendChild(dot);
+      b.appendChild(document.createTextNode("使用 " + p.name + " 登录"));
+      b.addEventListener("click", function () { signInWith(id); });
+      els.providers.appendChild(b);
+    });
+
+    els.oauth.hidden = !!currentUser || providerCount === 0;
+  }
 
   els.signout.addEventListener("click", async function () {
     if (libState !== "ready" || !supabase) { msg("登录服务还在加载，稍等一下", "warn"); return; }
@@ -2870,9 +3299,17 @@
     const whoChanged = (currentUser ? currentUser.id : null) !== lastUserId;
     lastUserId = currentUser ? currentUser.id : null;
 
-    els.form.hidden = signedIn;
-    els.tabs.hidden = signedIn;
-    els.oauth.hidden = signedIn || !ENABLE_GITHUB_OAUTH;
+    const useEmail = !signedIn && emailEnabled;
+    els.form.hidden = !useEmail;
+    els.tabs.hidden = !useEmail;
+    els.oauth.hidden = signedIn || providerCount === 0;
+
+    /* 神秘小黑屋：只有登录了才露出来 */
+    if (vaultEl) {
+      vaultEl.hidden = !signedIn;
+      // 让分屏逻辑重新量一次位置，不然回弹动画和圆角状态会是旧的
+      window.dispatchEvent(new Event("scroll"));
+    }
     els.user.hidden = !signedIn;
     els.avatar.hidden = !signedIn;
 
@@ -3003,6 +3440,52 @@
     supabase.auth.onAuthStateChange(function (_event, session) {
       renderUser(session ? session.user : null);
     });
+
+    /* 让界面跟着 Supabase 后台的设置走：
+       后台关掉注册 → 这里自动隐藏「注册」标签；
+       邮箱确认开关变了 → 注册提示文案也跟着变。
+       这个接口是公开的、不需要登录，参数走 query 是为了避免触发 CORS 预检。 */
+    (async function syncAuthSettings() {
+      try {
+        var url = SUPABASE_URL + "/auth/v1/settings?apikey=" + encodeURIComponent(SUPABASE_PUBLISHABLE_KEY);
+        var r = await fetch(url);
+        if (!r.ok) return;
+        var s = await r.json();
+
+        signupNeedsConfirm = !s.mailer_autoconfirm;
+
+        /* 第三方登录：external 里值为 true 的都算后台开了的 */
+        var ext = s.external || {};
+        var ids = Object.keys(ext).filter(function (k) {
+          return ext[k] === true && k !== "email" && k !== "phone" && k !== "anonymous_users";
+        });
+        renderProviders(ids);
+        if (ids.length) {
+          console.info("[auth] 后台开启了这些第三方登录：" + ids.join("、"));
+        }
+
+        /* 后台如果连邮箱登录都关了，就把邮箱密码表单也藏掉 */
+        emailEnabled = ext.email !== false;
+        if (!emailEnabled && !currentUser) {
+          els.form.hidden = true;
+          els.tabs.hidden = true;
+          console.info("[auth] 后台关闭了邮箱登录，只保留第三方登录入口");
+        }
+
+        if (s.disable_signup) {
+          var tab = els.tabs.querySelector('.auth-tab[data-mode="signup"]');
+          if (tab) tab.hidden = true;
+          if (mode === "signup") setMode("signin");
+          console.info("[auth] Supabase 已关闭注册，界面上的「注册」入口也一并隐藏了");
+        } else {
+          var t2 = els.tabs.querySelector('.auth-tab[data-mode="signup"]');
+          if (t2) t2.hidden = false;
+        }
+        if (mode === "signup") setMode("signup");   // 刷新一下文案
+      } catch (e) {
+        /* 读不到就保持默认界面，用户提交时 Supabase 仍会拦下来 */
+      }
+    })();
   })();
 </script>
 
