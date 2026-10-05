@@ -565,8 +565,15 @@
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_c7PYeDklxVVRtG5W1JUpmQ_7emESIWH";  // 已填好
   const ENABLE_GITHUB_OAUTH = false;     // 想用「GitHub 登录」就改成 true
 
+  /* 【可选·国内网络不稳时的终极解法】
+     用浏览器打开 https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm
+     → Ctrl+S 另存为 supabase.js，放到本文件旁边 → 把下面这行改成 "supabase.js"
+     这样就直接读仓库里的文件，完全不依赖外部 CDN。 */
+  const LOCAL_LIB = "";
+
   /* supabase-js 的加载地址：先试 ESM，全不通再退回官方文档里的 UMD 全局脚本。
      多写几个是防止某个 CDN 被墙 —— 任何一个能通就能用。 */
+  const LOAD_TIMEOUT = 6000;   // 单个源最多等 6 秒，超时就换下一个，不会一直卡住
   const ESM_SOURCES = [
     "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm",
     "https://esm.sh/@supabase/supabase-js@2"
@@ -589,6 +596,8 @@
   let supabase = null;
   let mode = "signin";      // signin | signup
   let currentUser = null;
+  // loading=正在加载库 / ready=可以点了 / failed=加载失败 / unconfigured=没填配置
+  let libState = "loading";
 
   /* ---------------- 面板开合 ---------------- */
   function openPanel(open) {
@@ -617,7 +626,22 @@
     els.msg.className = "auth-msg" + (kind ? " is-" + kind : "");
   }
 
+  /* 提交按钮的状态完全由 libState 决定：
+     库没就绪之前一律禁用并写明原因，绝不出现"看着能点、点了没反应"。 */
+  function refreshSubmit() {
+    if (libState === "ready") {
+      els.submit.disabled = false;
+      els.submit.textContent = mode === "signin" ? "登录" : "注册";
+    } else {
+      els.submit.disabled = true;
+      els.submit.textContent =
+        libState === "failed" ? "加载失败" :
+        libState === "unconfigured" ? "未配置" : "加载中…";
+    }
+  }
+
   function busy(on) {
+    if (libState !== "ready") { refreshSubmit(); return; }
     els.submit.disabled = on;
     els.submit.textContent = on ? "处理中…" : (mode === "signin" ? "登录" : "注册");
   }
@@ -630,14 +654,77 @@
     const signin = next === "signin";
     els.title.textContent = signin ? "登录" : "注册";
     els.sub.textContent = signin ? "用邮箱和密码登录" : "注册后需要去邮箱点确认链接";
-    els.submit.textContent = signin ? "登录" : "注册";
     els.password.setAttribute("autocomplete", signin ? "current-password" : "new-password");
-    msg("");
+    // 加载中 / 出错时的提示不要被清掉
+    if (libState === "ready") msg("");
+    refreshSubmit();
   }
 
   els.tabs.addEventListener("click", function (e) {
     const tab = e.target.closest(".auth-tab");
     if (tab) setMode(tab.dataset.mode);
+  });
+
+  /* ---------------- 三个按钮：同步就绑好，不等库加载 ----------------
+     这样即使 CDN 很慢，点下去也一定有明确反馈，而不是石沉大海。 */
+  els.form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    if (libState !== "ready" || !supabase) {
+      msg(libState === "failed"
+        ? "登录服务没加载成功，刷新页面重试"
+        : "登录服务还在加载，等几秒再点一次", "warn");
+      return;
+    }
+
+    const email = els.email.value.trim();
+    const password = els.password.value;
+    if (!email || !password) { msg("请把邮箱和密码都填上", "error"); return; }
+    if (password.length < 6) { msg("密码至少要 6 位", "error"); return; }
+
+    busy(true);
+    msg("");
+    try {
+      if (mode === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({ email: email, password: password });
+        if (error) throw error;
+        msg("登录成功", "ok");
+        openPanel(false);
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+          options: { emailRedirectTo: location.href.split("#")[0] }
+        });
+        if (error) throw error;
+        if (data && data.session) {
+          msg("注册成功，已自动登录", "ok");
+          openPanel(false);
+        } else {
+          msg("注册成功！请去 " + email + " 的收件箱点确认链接", "ok");
+        }
+      }
+    } catch (err) {
+      msg(zh(err), "error");
+    } finally {
+      busy(false);
+    }
+  });
+
+  els.github.addEventListener("click", async function () {
+    if (libState !== "ready" || !supabase) { msg("登录服务还在加载，稍等一下", "warn"); return; }
+    msg("");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: { redirectTo: location.href.split("#")[0] }
+    });
+    if (error) msg(zh(error), "error");
+  });
+
+  els.signout.addEventListener("click", async function () {
+    if (libState !== "ready" || !supabase) { msg("登录服务还在加载，稍等一下", "warn"); return; }
+    await supabase.auth.signOut();
+    msg("已退出登录", "ok");
+    openPanel(false);
   });
 
   /* 把 Supabase 的英文报错翻成人话 */
@@ -696,24 +783,48 @@
     });
   }
 
+  // 给每个源加超时，别让一个卡住的请求把整个流程拖死
+  function withTimeout(promise, ms, label) {
+    return new Promise(function (resolve, reject) {
+      const timer = setTimeout(function () { reject(new Error("超时：" + label)); }, ms);
+      promise.then(
+        function (v) { clearTimeout(timer); resolve(v); },
+        function (e) { clearTimeout(timer); reject(e); }
+      );
+    });
+  }
+
+  // ESM 模块 / UMD 全局 的导出形状不太一样，统一取一下 createClient
+  function pickCreateClient(mod) {
+    if (!mod) return null;
+    if (typeof mod.createClient === "function") return mod.createClient;
+    if (mod.supabase && typeof mod.supabase.createClient === "function") return mod.supabase.createClient;
+    if (mod.default && typeof mod.default.createClient === "function") return mod.default.createClient;
+    return null;
+  }
+
   async function loadLibrary() {
-    // 1) ESM 版
-    for (let i = 0; i < ESM_SOURCES.length; i++) {
+    const tries = [];
+    if (LOCAL_LIB) tries.push({ type: "esm", src: "./" + LOCAL_LIB });  // 仓库里的本地副本，优先级最高
+    ESM_SOURCES.forEach(function (src) { tries.push({ type: "esm", src: src }); });
+    UMD_SOURCES.forEach(function (src) { tries.push({ type: "umd", src: src }); });
+
+    for (let i = 0; i < tries.length; i++) {
+      const t = tries[i];
       try {
-        const mod = await import(ESM_SOURCES[i]);
-        if (mod && mod.createClient) return mod.createClient;
+        if (t.type === "esm") {
+          const mod = await withTimeout(import(t.src), LOAD_TIMEOUT, t.src);
+          // 本地文件可能是 ESM 版也可能是 UMD 版，两种都认一下
+          const fn = pickCreateClient(mod) || pickCreateClient(window.supabase);
+          if (fn) return fn;
+        } else {
+          // 模块里的 supabase 变量会遮蔽全局，所以显式写 window.supabase
+          await withTimeout(loadScript(t.src), LOAD_TIMEOUT, t.src);
+          const fn = pickCreateClient(window.supabase);
+          if (fn) return fn;
+        }
       } catch (err) {
-        /* 这个源不通，试下一个 */
-      }
-    }
-    // 2) UMD 版兜底（模块里的 supabase 变量会遮蔽全局，所以显式写 window.supabase）
-    for (let j = 0; j < UMD_SOURCES.length; j++) {
-      try {
-        await loadScript(UMD_SOURCES[j]);
-        const g = window.supabase;
-        if (g && g.createClient) return g.createClient;
-      } catch (err) {
-        /* 同上 */
+        /* 这个源不通或超时，试下一个 */
       }
     }
     return null;
@@ -722,20 +833,30 @@
   /* ---------------- 启动 ---------------- */
   (async function initAuth() {
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+      libState = "unconfigured";
       renderUser(null);
       els.email.disabled = true;
       els.password.disabled = true;
-      els.submit.disabled = true;
       msg("还没配置 Supabase：把 SUPABASE_URL 和 SUPABASE_PUBLISHABLE_KEY 填到 index.html 顶部的配置区就能用了。", "warn");
       return;
     }
 
+    // 先把"正在加载"摆出来，别让人对着一个点了没反应的按钮发呆
+    refreshSubmit();
+    msg("正在加载登录服务，请稍等几秒…", "warn");
+
     const createClient = await loadLibrary();
+
     if (!createClient) {
-      els.submit.disabled = true;
-      msg("登录服务加载失败（CDN 可能被拦截），刷新页面重试。", "error");
+      libState = "failed";
+      refreshSubmit();
+      msg("登录服务加载失败（CDN 被拦截或网络太慢）。刷新重试；一直不行就把 supabase-js 下到仓库里，再把 LOCAL_LIB 打开。", "error");
       return;
     }
+
+    libState = "ready";
+    refreshSubmit();
+    msg("");
 
     supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: {
@@ -745,64 +866,7 @@
       }
     });
 
-    /* 邮箱 + 密码：登录 / 注册 */
-    els.form.addEventListener("submit", async function (e) {
-      e.preventDefault();
-      if (!supabase) return;
-
-      const email = els.email.value.trim();
-      const password = els.password.value;
-
-      if (!email || !password) { msg("请把邮箱和密码都填上", "error"); return; }
-      if (password.length < 6) { msg("密码至少要 6 位", "error"); return; }
-
-      busy(true);
-      msg("");
-      try {
-        if (mode === "signin") {
-          const { error } = await supabase.auth.signInWithPassword({ email: email, password: password });
-          if (error) throw error;
-          msg("登录成功", "ok");
-          openPanel(false);
-        } else {
-          const { data, error } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: { emailRedirectTo: location.href.split("#")[0] }
-          });
-          if (error) throw error;
-          if (data && data.session) {
-            msg("注册成功，已自动登录", "ok");
-            openPanel(false);
-          } else {
-            msg("注册成功！请去 " + email + " 的收件箱点确认链接", "ok");
-          }
-        }
-      } catch (err) {
-        msg(zh(err), "error");
-      } finally {
-        busy(false);
-      }
-    });
-
-    /* GitHub 登录（需要在 Supabase 后台先开启 GitHub provider） */
-    els.github.addEventListener("click", async function () {
-      if (!supabase) return;
-      msg("");
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "github",
-        options: { redirectTo: location.href.split("#")[0] }
-      });
-      if (error) msg(zh(error), "error");
-    });
-
-    /* 退出登录 */
-    els.signout.addEventListener("click", async function () {
-      if (!supabase) return;
-      await supabase.auth.signOut();
-      msg("已退出登录", "ok");
-      openPanel(false);
-    });
+    /* 表单提交 / GitHub / 退出登录 三个监听器已经在上面同步绑定好了 */
 
     /* 读取已有登录状态，并监听后续变化 */
     const { data } = await supabase.auth.getSession();
