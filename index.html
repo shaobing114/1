@@ -1,12 +1,210 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的第一个网站</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>你好，我是烧饼114</title>
+<style>
+  /* ===== 想调整文字位置，只改这两个值即可 =====
+     50% / 50% = 正中；想放到左侧空白处试试 34% / 46% */
+  :root {
+    --text-x: 50%;
+    --text-y: 50%;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0b0b0f; /* 图片加载前的底色，避免白屏闪烁 */
+  }
+
+  /* ===== 背景图层：打开网页时淡入 ===== */
+  .bg {
+    position: fixed;
+    inset: 0;
+    background-image: url("./壁纸.png");
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transform: scale(1.08);
+    animation: bgFadeIn 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) 0.15s forwards;
+    will-change: opacity, transform;
+  }
+
+  @keyframes bgFadeIn {
+    0% {
+      opacity: 0;
+      transform: scale(1.08);
+      filter: blur(6px);
+    }
+    60% {
+      filter: blur(2px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+      filter: blur(0);
+    }
+  }
+
+  /* 四周压暗，让画面更有氛围、文字更突出 */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0.05) 0%,
+      rgba(0, 0, 0, 0.40) 100%
+    );
+    opacity: 0;
+    animation: fadeIn 1.8s ease 0.45s forwards;
+    pointer-events: none;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* ===== 文字锚点：由 --text-x / --text-y 决定位置 ===== */
+  .anchor {
+    position: fixed;
+    left: var(--text-x);
+    top: var(--text-y);
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    max-width: 92vw;
+  }
+
+  /* ===== 文字本体 ===== */
+  .title {
+    position: relative;
+    font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB",
+                 "Noto Sans SC", system-ui, -apple-system, sans-serif;
+    font-size: clamp(26px, 6.5vw, 76px);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.3;
+    text-align: center;
+    color: #ffffff;
+    /* 只有笔画周围压暗，不遮画面本身，白字在任何底色上都清楚 */
+    text-shadow:
+      0 0 8px rgba(0, 0, 0, 0.70),
+      0 3px 14px rgba(0, 0, 0, 0.70),
+      0 6px 28px rgba(0, 0, 0, 0.50);
+    /* 等背景淡入差不多结束再开始逐字跳出 */
+    opacity: 0;
+    animation: titleShow 0.01s linear 1.5s forwards;
+  }
+
+  @keyframes titleShow {
+    to { opacity: 1; }
+  }
+
+  #typed { display: inline; }
+
+  /* 每个字：快速上浮 + 放大回弹 + 淡入 */
+  .char {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(0.45em) scale(0.9);
+    animation: charPop 0.34s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  }
+
+  @keyframes charPop {
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* 光标 */
+  .cursor {
+    display: inline-block;
+    width: 0.06em;
+    height: 1.05em;
+    min-width: 3px;
+    margin-left: 0.06em;
+    vertical-align: -0.14em;
+    background: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    animation: blink 0.72s steps(1) infinite;
+  }
+
+  @keyframes blink {
+    0%, 49%   { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  /* 打完字后光标再闪几下就停住 */
+  .cursor.done {
+    animation: blink 0.72s steps(1) 4;
+  }
+
+  /* 尊重系统的“减少动态效果”偏好 */
+  @media (prefers-reduced-motion: reduce) {
+    .bg      { animation: none; opacity: 1; transform: none; filter: none; }
+    .overlay { animation: none; opacity: 1; }
+    .title   { animation: none; opacity: 1; }
+    .char    { animation: none; opacity: 1; transform: none; }
+    .cursor  { animation: none; }
+  }
+</style>
 </head>
 <body>
-    <h1>欢迎来到我的网站！</h1>
-    <p>这是我白嫖的第一个网页，我正在慢慢学习编辑它。</p>
+
+  <div class="bg"></div>
+  <div class="overlay"></div>
+
+  <div class="anchor">
+    <h1 class="title">
+      <span id="typed" aria-label="你好，我是烧饼114"></span><span class="cursor" id="cursor"></span>
+    </h1>
+  </div>
+
+<script>
+  (function () {
+    var TEXT = "你好，我是烧饼114";
+    var SPEED = 110;        // 每个字的间隔（毫秒），越小越快
+    var START_DELAY = 1550; // 等背景淡入后再开始打字
+
+    var typed = document.getElementById("typed");
+    var cursor = document.getElementById("cursor");
+    var reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // 系统开启“减少动态效果”时，直接整句显示
+    if (reduceMotion) {
+      typed.textContent = TEXT;
+      cursor.classList.add("done");
+      return;
+    }
+
+    var i = 0;
+    function next() {
+      if (i >= TEXT.length) {
+        cursor.classList.add("done");
+        return;
+      }
+      var ch = TEXT.charAt(i);
+      var span = document.createElement("span");
+      span.className = "char";
+      span.textContent = ch === " " ? "\u00A0" : ch;
+      typed.appendChild(span);
+      i++;
+      setTimeout(next, SPEED);
+    }
+
+    setTimeout(next, START_DELAY);
+  })();
+</script>
+
 </body>
 </html>
