@@ -49,14 +49,15 @@
     position: fixed;
     inset: 0;
     /* WebP 比原 PNG 小一个数量级（约 190 KB vs 1.96 MB）。
-       @2x 是 1920×1080 原尺寸，普通屏走下面 1600×900 的那张，更省流量。
-       需要回退时把两行 url() 换成 ./壁纸.png 即可（原图保留着）。 */
-    background-image:
-      image-set(
-        url("./壁纸@2x.webp") dppx 2,
-        url("./壁纸.webp") dppx 1
-      ),
-      url("./壁纸.webp");   /* 老浏览器不认 image-set 时用这张 */
+       @2x 是 1920×1080 原尺寸，普通屏走 1600×900 那张，更省流量。
+       两行是覆盖关系：第二行（image-set）只有浏览器认识它才生效，
+       不认识就整行作废、自动用第一行——所以怎么写都不会黑屏。
+       要回退原图：把下面两行 url() 都换成 ./壁纸.png。 */
+    background-image: url("./壁纸.webp");
+    background-image: image-set(
+      url("./壁纸@2x.webp") 2dppx,
+      url("./壁纸.webp") 1dppx
+    );
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
