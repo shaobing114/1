@@ -48,7 +48,15 @@
   .bg {
     position: fixed;
     inset: 0;
-    background-image: url("./壁纸.png");
+    /* WebP 比原 PNG 小一个数量级（约 190 KB vs 1.96 MB）。
+       @2x 是 1920×1080 原尺寸，普通屏走下面 1600×900 的那张，更省流量。
+       需要回退时把两行 url() 换成 ./壁纸.png 即可（原图保留着）。 */
+    background-image:
+      image-set(
+        url("./壁纸@2x.webp") dppx 2,
+        url("./壁纸.webp") dppx 1
+      ),
+      url("./壁纸.webp");   /* 老浏览器不认 image-set 时用这张 */
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
@@ -1742,8 +1750,10 @@
       <div class="news-grid">
 
         <!-- 一条新闻 = 一个圆角方格：图片在上面，文字在下面。
-             要加新的，把整个 <article> 复制一份改图和标题就行。 -->
-        <article class="news-card" role="button" tabindex="0" aria-label="打开新闻：没东西写了喵">
+             要加新的，把整个 <article> 复制一份改图和标题就行。
+             这张是「兜底卡片」：news/ 里没新闻时靠它不白屏，
+             有新闻时会自动排到队尾，怎么删新闻都不会丢（见 JS 里的 PIN_FALLBACK）。 -->
+        <article class="news-card" role="button" tabindex="0" aria-label="打开新闻：没东西写了喵" data-fallback>
           <div class="news-thumb">
             <img src="./头像.jpg" alt="没东西写了喵">
           </div>
@@ -2177,7 +2187,7 @@
 
     /* 取仓库里某个文件的地址。
        顺序很讲究：
-         1. 同源相对路径 —— 页面本身就在 GitHub Pages 上，仓库文件跟 壁纸.png 一样直接取，
+         1. 同源相对路径 —— 页面本身就在 GitHub Pages 上，仓库文件跟 壁纸.webp 一样直接取，
             最快，而且不受 raw.githubusercontent / jsDelivr 在国内被墙的影响。★主力
          2. raw.githubusercontent —— 只在页面被搬到别处托管时才用得上
          3. jsDelivr —— 最后的兜底（这个域名在国内时好时坏） */
@@ -2731,6 +2741,26 @@
       };
     }
 
+    /* ============ 手写兜底卡片「没东西写了喵」 ============
+       它固定写在 HTML 里，什么时候都在：
+         · news/ 里一条都没有、或接口拉不到   → 单独显示它（不白屏）
+         · news/ 里有真实新闻                 → 排在所有真实新闻后面，一起显示
+       想改成"有新闻就不出现"，把 PIN_FALLBACK 设成 false
+       （接口失败 / 一条新闻都没有时它依然会兜底，这是它的本职）。 */
+    var PIN_FALLBACK = true;
+    var fallbackCard = grid ? grid.querySelector(".news-card:not([data-dynamic])") : null;
+
+    // 手写卡片要一直在页面上：grid.innerHTML = "" 会把它连坐清掉，
+    // 所以不管有没有真实新闻，发现它掉了就接回 grid 末尾
+    function pinFallback() {
+      if (!fallbackCard) return;
+      if (fallbackCard.parentNode !== grid) {
+        grid.appendChild(fallbackCard);
+        fallbackCard.__pinned = true;
+      }
+      fallbackCard.hidden = false;
+    }
+
     function showImage(i) {
       if (!current || !current.images.length) {
         imgSlot.removeAttribute("src");
@@ -2863,6 +2893,7 @@
     function makeCard(item) {
       var card = document.createElement("article");
       card.className = "news-card";
+      card.setAttribute("data-dynamic", "");   // 区别于 HTML 里手写的兜底卡片
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");
       card.setAttribute("aria-label", "打开新闻：" + item.title);
@@ -2951,21 +2982,32 @@
       if (tree === null) {
         // 拉不到就保留页面上手写的兜底内容，不算白屏
         showHint("内容暂时拉不到（可能是 GitHub 接口限流或网络不通），刷新一下再看看。");
+        pinFallback();
         return;
       }
 
       /* ---- 新闻 ---- */
       var items = buildItems(tree);
-      if (!items.length) {
-        showHint("还没检测到新闻。在仓库里建一个 " + NEWS_DIR + "/日期+标题/ 这样的文件夹，" +
-                 "里面放「配图01.jpg」和「正文.txt」或「正文.docx」，这里就会自动出现。");
-      } else {
-        showHint("");
+
+      // 有真实新闻才清空重画；清空会把手写卡片连坐掉，
+      // 所以接着用 pinFallback() 把它接回队尾（队尾 = 排在所有真实新闻后面）
+      // PIN_FALLBACK = false 时不接回：有新闻就不显示，没新闻 / 接口挂了才出现
+      if (items.length) {
         grid.innerHTML = "";
         items.forEach(function (it) { grid.appendChild(makeCard(it)); });
-        bindCards();
+      }
+      if (PIN_FALLBACK) pinFallback();
+      bindCards();
+
+      if (!items.length) {
+        showHint("还没检测到新闻。在仓库里建一个 " + NEWS_DIR + "/日期+标题/ 这样的文件夹，" +
+                 "里面放「配图01.jpg」和「正文.txt」或「正文.docx」，这里就会自动出现。" +
+                 (PIN_FALLBACK ? "（下面那张是页面自带的兜底卡片，一直都在。）" : ""));
+      } else {
+        showHint("");
         console.log("[新闻] 读到 " + items.length + " 条：" +
-          items.map(function (it) { return it.title; }).join("、"));
+          items.map(function (it) { return it.title; }).join("、") +
+          (PIN_FALLBACK ? "（外加手写的兜底卡片）" : ""));
       }
 
       /* ---- 游戏 ---- */
