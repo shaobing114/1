@@ -634,6 +634,13 @@
     transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 
+  /* 配图实在加载不出来（格式不支持 / 文件不存在）时的斜纹灰底，比裂图好看 */
+  .news-thumb img.is-broken,
+  .news-modal-hero img.is-broken,
+  .news-modal-thumbs img.is-broken {
+    background: repeating-linear-gradient(45deg, #eef2f8 0 12px, #e2e9f3 12px 24px);
+  }
+
   .news.is-ready .news-card:hover .news-thumb img {
     transform: scale(1.045);
   }
@@ -1169,12 +1176,18 @@
     function imgUrl(im) { return im.url ? im.url : rawUrl(im.path); }
     function imgFallback(im) { return im.url ? "" : cdnUrl(im.path); }
 
-    // 图片先走 raw.githubusercontent，拉不到就自动换 jsDelivr
+    // 图片先走 raw.githubusercontent，拉不到就换 jsDelivr；
+    // 两个都失败（格式浏览器不支持 / 文件不存在）就留个灰底占位，别显示裂图
     function loadImg(img, im) {
+      var failed = 0;
       img.onerror = function () {
+        failed++;
+        var fb = failed === 1 ? imgFallback(im) : "";
+        if (fb) { img.src = fb; return; }
         img.onerror = null;
-        var fb = imgFallback(im);
-        if (fb) img.src = fb;
+        img.removeAttribute("src");
+        img.classList.add("is-broken");
+        console.warn("[news] 配图加载失败：", im.path || im.url);
       };
       img.src = imgUrl(im);
     }
