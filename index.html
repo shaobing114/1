@@ -1226,13 +1226,22 @@
 
         var it = map[folder] || (map[folder] = { key: folder, images: [], textPath: "", textScore: -1 });
 
-        if (/\.(jpe?g|png|webp|gif|avif|bmp)$/i.test(file)) {
+        var isImage = /\.(jpe?g|jfif|png|webp|gif|avif|bmp)$/i.test(file);
+        var isText = /\.(txt|text|md)$/i.test(file);
+
+        if (isImage) {
+          // 排序只看文件名里的数字，跟后缀没关系，所以 jpg/png/webp 混着放也能排对
           var n = /(\d+)/.exec(file);
           it.images.push({ path: p, name: file, num: n ? parseInt(n[1], 10) : 9999 });
-        } else if (/\.(txt|text|md)$/i.test(file)) {
+        } else if (isText) {
           // 同时有多个文本时，优先「正文」
           var score = /正文/.test(file) ? 2 : (/\.txt$/i.test(file) ? 1 : 0);
           if (score > it.textScore) { it.textScore = score; it.textPath = p; }
+        } else if (file.charAt(0) !== "." && file !== "Thumbs.db") {
+          // 认不出来的文件提示一下，免得"我明明放进去了却没显示"
+          console.warn("[news] " + p + " 不是支持的配图格式，已忽略。\n" +
+            "浏览器能直接显示：jpg / jpeg / jfif / png / webp / gif / avif / bmp。\n" +
+            "HEIC（iPhone 默认格式）、TIFF、RAW 需要先转成 jpg 或 png。");
         }
       });
 
