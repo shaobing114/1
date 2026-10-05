@@ -597,11 +597,17 @@
     border-radius: 20px;
     background: #fff;
     box-shadow: 0 10px 26px rgba(23, 32, 51, 0.08);
+    cursor: pointer;
     opacity: 0;
     transform: translateY(18px);
     transition: opacity 0.5s ease 0.18s,
                 transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) 0.18s,
                 box-shadow 0.28s ease;
+  }
+
+  .news-card:focus-visible {
+    outline: 3px solid rgba(127, 196, 255, 0.9);
+    outline-offset: 3px;
   }
 
   .news.is-ready .news-card {
@@ -661,6 +667,114 @@
     border-color: rgba(20, 30, 50, 0.24);
   }
 
+  /* ================= 新闻详情弹层 ================= */
+  .news-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;          /* 要盖过右上角的登录按钮(z-index:10) */
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+  }
+
+  .news-modal.open { display: flex; }
+
+  .news-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 12, 22, 0.62);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    animation: fadeIn 0.25s ease both;
+  }
+
+  .news-modal-card {
+    position: relative;
+    width: min(720px, 100%);
+    max-height: min(86vh, 920px);
+    overflow: hidden auto;
+    overscroll-behavior: contain;
+    border-radius: 22px;
+    background: #fff;
+    color: #172033;
+    font-family: var(--font-cn);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+    animation: modalIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(22px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .news-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    font-family: inherit;
+    font-size: 20px;
+    line-height: 1;
+    color: #fff;
+    cursor: pointer;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(12, 18, 30, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 0.18s;
+  }
+
+  .news-modal-close:hover { background: rgba(12, 18, 30, 0.78); }
+
+  /* 详情页的图：整宽横幅。max-height 限制高度，免得图把正文挤下去。
+     想完整显示不裁切，把下面的 object-fit: cover 改成 contain */
+  .news-modal-hero {
+    aspect-ratio: 16 / 10;
+    max-height: 52vh;
+    overflow: hidden;
+    background: #eef2f8;
+  }
+
+  .news-modal-hero img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 30%;   /* 裁切往上偏，别切到人物头部 */
+  }
+
+  .news-modal-body { padding: 26px 30px 42px; }
+
+  .news-modal-title {
+    font-size: clamp(22px, 3.4vw, 30px);
+    font-weight: 800;
+    line-height: 1.4;
+    text-align: center;      /* 标题居中 */
+  }
+
+  /* 标题和正文之间空出一行 */
+  .news-modal-text {
+    margin-top: 1.9em;
+    font-size: 16px;
+    line-height: 1.95;
+    color: #35415a;
+  }
+
+  .news-modal-text p + p { margin-top: 1.05em; }
+
+  @media (max-width: 560px) {
+    .news-modal { padding: 12px; }
+    .news-modal-body { padding: 20px 20px 32px; }
+    .news-modal-card { max-height: 90vh; }
+  }
+
   /* 尊重系统的“减少动态效果”偏好 */
   @media (prefers-reduced-motion: reduce) {
     .bg      { animation: none; opacity: 1; transform: none; filter: none; }
@@ -673,6 +787,7 @@
     .scroll-hint { animation: none; opacity: 1; }
     .scroll-hint i { animation: none; }
     .news-inner, .news-card { transition: none; opacity: 1; transform: none; }
+    .news-modal-backdrop, .news-modal-card { animation: none; }
   }
 </style>
 </head>
@@ -762,16 +877,29 @@
 
         <!-- 一条新闻 = 一个圆角方格：图片在上面，文字在下面。
              要加新的，把整个 <article> 复制一份改图和标题就行。 -->
-        <article class="news-card">
+        <article class="news-card" role="button" tabindex="0" aria-label="打开新闻：没东西写了喵">
           <div class="news-thumb">
             <img src="./头像.jpg" alt="没东西写了喵">
           </div>
           <div class="news-body">
             <h3 class="news-card-title">没东西写了喵</h3>
-            <!-- 想加正文就把下面这行的注释去掉
-            <p class="news-card-text">正文写在这里。</p>
+            <!-- 想在卡片上也显示一行摘要，就放开下面这行的注释
+            <p class="news-card-text">摘要写在这里。</p>
             -->
           </div>
+
+          <!-- ===== 点开卡片后显示的正文 =====
+               改这里的内容就行，卡片外观不受影响。 -->
+          <template class="news-detail">
+            <p>喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵。喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵。</p>
+            <p>喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵，喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵。</p>
+            <p>喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵，喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵！</p>
+            <p>喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵。</p>
+            <p>喵喵喵喵喵喵喵喵喵喵：<br>一、喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵。<br>二、喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵。<br>三、喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵。</p>
+            <p>喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵。</p>
+            <p>喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵，喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵。</p>
+            <p>——喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵喵。</p>
+          </template>
         </article>
 
       </div>
@@ -783,6 +911,22 @@
     .news-inner, .news-card { opacity: 1 !important; transform: none !important; }
   </style>
 </noscript>
+
+<!-- ===== 新闻详情弹层：点卡片打开 ===== -->
+<div class="news-modal" id="newsModal" role="dialog" aria-modal="true"
+     aria-labelledby="newsModalTitle" aria-hidden="true">
+  <div class="news-modal-backdrop" id="newsBackdrop"></div>
+  <div class="news-modal-card">
+    <button class="news-modal-close" id="newsClose" type="button" aria-label="关闭">&times;</button>
+    <div class="news-modal-hero">
+      <img id="newsModalImg" src="" alt="">
+    </div>
+    <div class="news-modal-body">
+      <h2 class="news-modal-title" id="newsModalTitle"></h2>
+      <div class="news-modal-text" id="newsModalText"></div>
+    </div>
+  </div>
+</div>
 
 <script>
   /* ================= 逐字打字动画 ================= */
@@ -845,14 +989,20 @@
       // 0 = 白底还在屏幕外，1 = 完全铺满。用来驱动圆角、阴影、小横杠
       root.style.setProperty("--reveal", p.toFixed(3));
 
-      // 白底基本铺满之后，才把内容放出来
-      if (!revealed && (p >= 0.96 || reduceMotion)) {
-        revealed = true;
-        news.classList.add("is-ready");
-      }
-
       // 滚到新闻页后，右上角按钮换成浅色样式
       document.body.classList.toggle("on-news", p > 0.62);
+
+      if (reduceMotion) return;   // 减少动态效果时内容常驻，不做播放/收起
+
+      // 白底铺满 → 内容出来；滑回顶部附近再下来 → 收回去重播。
+      // 用两个不同的阈值（0.96 / 0.15）做回滞，免得在新闻页小幅滚动时反复闪。
+      if (p >= 0.96 && !revealed) {
+        revealed = true;
+        news.classList.add("is-ready");
+      } else if (p <= 0.15 && revealed) {
+        revealed = false;
+        news.classList.remove("is-ready");
+      }
     }
 
     function onScroll() {
@@ -864,7 +1014,78 @@
 
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
+    if (reduceMotion) news.classList.add("is-ready");
     update();   // 刷新后可能停在中间，先算一次
+  })();
+</script>
+
+<script>
+  /* ================= 新闻详情弹层 ================= */
+  (function () {
+    var modal = document.getElementById("newsModal");
+    if (!modal) return;
+
+    var backdrop = document.getElementById("newsBackdrop");
+    var closeBtn = document.getElementById("newsClose");
+    var imgSlot = document.getElementById("newsModalImg");
+    var titleSlot = document.getElementById("newsModalTitle");
+    var textSlot = document.getElementById("newsModalText");
+    var lastCard = null;
+    var lockedY = 0;
+
+    function lockScroll() {
+      lockedY = window.pageYOffset || 0;
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    }
+
+    function unlockScroll() {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, lockedY);   // 有的浏览器会跳回顶部，这里补回来
+    }
+
+    function open(card) {
+      var img = card.querySelector(".news-thumb img");
+      var title = card.querySelector(".news-card-title");
+      var tpl = card.querySelector("template.news-detail");
+
+      imgSlot.src = img ? img.src : "";
+      imgSlot.alt = img ? img.alt : "";
+      titleSlot.textContent = title ? title.textContent : "";
+      textSlot.innerHTML = tpl ? tpl.innerHTML : "";
+
+      lastCard = card;
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+      lockScroll();
+      closeBtn.focus();
+    }
+
+    function close() {
+      if (!modal.classList.contains("open")) return;
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      unlockScroll();
+      if (lastCard) lastCard.focus();   // 焦点还回卡片，键盘用户不会迷路
+    }
+
+    // 卡片：点击 / 回车 / 空格 都能打开
+    Array.prototype.forEach.call(document.querySelectorAll(".news-card"), function (card) {
+      card.addEventListener("click", function () { open(card); });
+      card.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+          e.preventDefault();
+          open(card);
+        }
+      });
+    });
+
+    if (backdrop) backdrop.addEventListener("click", close);
+    if (closeBtn) closeBtn.addEventListener("click", close);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") close();
+    });
   })();
 </script>
 
