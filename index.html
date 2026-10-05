@@ -545,18 +545,25 @@
   /* ================================================================
      Supabase 登录配置 —— 只需要改这三行
      ================================================================
-     SUPABASE_URL / SUPABASE_ANON_KEY 去哪找：
-       Supabase 控制台 → 你的项目 → Project Settings → API
-       - Project URL          → 填到 SUPABASE_URL
-       - anon / publishable key → 填到 SUPABASE_ANON_KEY
+     这两个值去哪找（Supabase 后台改版过，认准下面两条路）：
 
-     关于安全：anon key 本来就是给浏览器用的公开密钥，
-     放在前端不算泄密；真正的权限由数据库的 RLS 策略控制。
-     千万不要把 service_role key 写在这里！
+       ① 最快：进项目后点顶部的 【Connect】 按钮，
+          弹窗里直接给你 Project URL 和 Publishable key，复制即可。
+
+       ② 或者：左侧 Settings（齿轮）→ API Keys
+          （注意：新版后台已经没有单独的 Settings → API 页面了）
+          - Project URL        → 填到 SUPABASE_URL
+          - Publishable key    → 填到 SUPABASE_PUBLISHABLE_KEY
+            形如 sb_publishable_xxxxxxxx
+            老项目里那串 eyJ 开头的 anon key 也能填，效果一样。
+
+     关于安全：Publishable key（老的 anon key）本来就是给浏览器用的
+     公开密钥，放在前端不算泄密，真正的权限由数据库 RLS 策略控制。
+     千万千万不能把 Secret key / service_role key 写在这里，那是总钥匙！
      ================================================================ */
-  const SUPABASE_URL = "";        // 例：https://abcdefghijk.supabase.co
-  const SUPABASE_ANON_KEY = "";   // 例：eyJhbGciOiJIUzI1NiIsInR5cCI6...
-  const ENABLE_GITHUB_OAUTH = false;  // 想用「GitHub 登录」就改成 true
+  const SUPABASE_URL = "https://zowfbpbwqnikxmcmjwfr.supabase.co";  // 已填好
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_c7PYeDklxVVRtG5W1JUpmQ_7emESIWH";  // 已填好
+  const ENABLE_GITHUB_OAUTH = false;     // 想用「GitHub 登录」就改成 true
 
   /* supabase-js 的加载地址：先试 ESM，全不通再退回官方文档里的 UMD 全局脚本。
      多写几个是防止某个 CDN 被墙 —— 任何一个能通就能用。 */
@@ -714,12 +721,12 @@
 
   /* ---------------- 启动 ---------------- */
   (async function initAuth() {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       renderUser(null);
       els.email.disabled = true;
       els.password.disabled = true;
       els.submit.disabled = true;
-      msg("还没配置 Supabase：把 SUPABASE_URL 和 SUPABASE_ANON_KEY 填到 index.html 顶部的配置区就能用了。", "warn");
+      msg("还没配置 Supabase：把 SUPABASE_URL 和 SUPABASE_PUBLISHABLE_KEY 填到 index.html 顶部的配置区就能用了。", "warn");
       return;
     }
 
@@ -730,7 +737,7 @@
       return;
     }
 
-    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: {
         persistSession: true,     // 关掉浏览器再打开还是登录状态
         autoRefreshToken: true,   // 自动续期
