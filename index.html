@@ -675,8 +675,8 @@
     color: #93a0b5;
   }
 
-  /* 滚到新闻页时，右上角按钮从"深色玻璃"换成"白色卡片"，在浅色背景上更清楚 */
-  body.on-news .auth-btn {
+  /* 滚到浅色页面（新闻/游戏）时，右上角按钮从"深色玻璃"换成"白色卡片" */
+  body.on-light .auth-btn {
     color: #16233a;
     border-color: rgba(20, 30, 50, 0.14);
     background: rgba(255, 255, 255, 0.92);
@@ -684,7 +684,7 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
 
-  body.on-news .auth-btn:hover {
+  body.on-light .auth-btn:hover {
     background: #fff;
     border-color: rgba(20, 30, 50, 0.24);
   }
@@ -887,6 +887,305 @@
     .news-modal-card { max-height: 90vh; }
   }
 
+  /* docx 正文里插的图 */
+  .news-modal-text img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1.5em auto;
+    border-radius: 12px;
+    cursor: zoom-in;
+    box-shadow: 0 6px 20px rgba(23, 32, 51, 0.12);
+  }
+
+  .news-modal-hero img { cursor: zoom-in; }
+
+  /* ================= 点图看原图（灯箱） ================= */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 200;            /* 要盖过新闻弹层(100) */
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lightbox.open { display: flex; }
+
+  .lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(6, 10, 18, 0.93);
+    animation: fadeIn 0.2s ease both;
+  }
+
+  .lightbox-img {
+    position: relative;
+    max-width: 94vw;
+    max-height: 88vh;
+    object-fit: contain;     /* 完整显示，不裁切 */
+    border-radius: 8px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7);
+    cursor: zoom-out;
+    animation: modalIn 0.26s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    font-family: inherit;
+    font-size: 24px;
+    line-height: 1;
+    color: #fff;
+    cursor: pointer;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    transition: background 0.18s;
+  }
+
+  .lightbox-close:hover { background: rgba(255, 255, 255, 0.28); }
+
+  .lightbox-nav {
+    position: absolute;
+    top: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    cursor: pointer;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    transform: translateY(-50%);
+    transition: background 0.18s;
+  }
+
+  .lightbox-nav:hover { background: rgba(255, 255, 255, 0.3); }
+
+  .lightbox-nav i {
+    width: 11px;
+    height: 11px;
+    border-top: 2px solid #fff;
+    border-right: 2px solid #fff;
+  }
+
+  .lightbox-nav--prev { left: 16px; }
+  .lightbox-nav--prev i { transform: rotate(-135deg) translate(-1px, -1px); }
+  .lightbox-nav--next { right: 16px; }
+  .lightbox-nav--next i { transform: rotate(45deg) translate(-1px, -1px); }
+
+  .lightbox-counter {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    padding: 4px 13px;
+    font-size: 13px;
+    color: #fff;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.16);
+    transform: translateX(-50%);
+  }
+
+  /* ================= 游戏页（淡青） ================= */
+  .games {
+    position: relative;
+    z-index: 6;                /* 比新闻页(5)高，滚上来盖住新闻 */
+    min-height: 100vh;
+    padding: 0 22px 90px;
+    background: #e4f4f3;
+    color: #10333a;
+    font-family: var(--font-cn);
+    border-radius: calc((1 - var(--reveal, 0)) * 30px)
+                   calc((1 - var(--reveal, 0)) * 30px) 0 0;
+    box-shadow: 0 calc(var(--reveal, 0) * -6px) 60px rgba(0, 0, 0, 0.45);
+  }
+
+  .games-grabber {
+    width: 46px;
+    height: 5px;
+    margin: 0 auto;
+    border-radius: 99px;
+    background: rgba(16, 51, 58, 0.16);
+    transform: translateY(14px);
+    opacity: calc(1 - var(--reveal, 0) * 0.7);
+  }
+
+  .games-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding-top: 74px;
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.55s ease 0.1s, transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s;
+  }
+
+  .games.is-ready .games-inner { opacity: 1; transform: none; }
+
+  .games-heading {
+    font-size: clamp(30px, 5vw, 46px);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #0d3a3f;
+  }
+
+  .games-heading::after {
+    content: "";
+    display: block;
+    width: 52px;
+    height: 4px;
+    margin-top: 14px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #57b8b0, #a5ded8);
+  }
+
+  .games-sub {
+    margin: 18px 0 30px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #5d7d80;
+  }
+
+  /* 横向排开的一排卡片 */
+  .games-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 22px;
+  }
+
+  /* 卡片内部竖向：图标 → 标题 → 官网按钮 */
+  .game-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 250px;
+    max-width: 100%;
+    padding: 28px 22px 24px;
+    text-align: center;
+    border: 1px solid rgba(16, 51, 58, 0.08);
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 10px 26px rgba(16, 51, 58, 0.07);
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.5s ease 0.18s,
+                transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) 0.18s,
+                box-shadow 0.28s ease;
+  }
+
+  .games.is-ready .game-card { opacity: 1; transform: none; }
+
+  .games.is-ready .game-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(16, 51, 58, 0.14);
+  }
+
+  /* 图标底用深色：这两个 logo 都是白色的，浅底上会看不见 */
+  .game-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    padding: 12px;
+    overflow: hidden;
+    border-radius: 24px;
+    background: linear-gradient(150deg, #164a4e, #0d3236);
+    box-shadow: 0 6px 16px rgba(16, 51, 58, 0.18);
+  }
+
+  .game-icon img {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;      /* logo 完整显示，宽版字标也不会被裁掉 */
+  }
+
+  /* 整张照片类的图就用 cover 铺满 */
+  .game-icon--cover { padding: 0; }
+  .game-icon--cover img { object-fit: cover; }
+
+  /* 图还没传上来时显示的字母占位 */
+  .game-icon-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .game-title {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  /* 端游 / 手游 两个按钮并排 */
+  .game-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .game-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 15px;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #fff;
+    border-radius: 99px;
+    background: #2f8f89;
+    transition: background 0.18s, transform 0.12s;
+  }
+
+  .game-link:hover { background: #25726d; transform: translateY(-1px); }
+
+  /* 次要按钮：淡青底 + 青绿字 */
+  .game-link--ghost {
+    color: #2b7d77;
+    background: rgba(47, 143, 137, 0.12);
+  }
+
+  .game-link--ghost:hover { background: rgba(47, 143, 137, 0.22); }
+
+  .game-link--muted {
+    color: #78989b;
+    background: rgba(16, 51, 58, 0.07);
+    cursor: default;
+  }
+
+  .game-link--muted:hover {
+    background: rgba(16, 51, 58, 0.07);
+    transform: none;
+  }
+
+  @media (max-width: 560px) {
+    .lightbox-nav { width: 38px; height: 38px; }
+    .lightbox-nav--prev { left: 8px; }
+    .lightbox-nav--next { right: 8px; }
+    .game-card { width: 100%; }
+  }
+
   /* 尊重系统的“减少动态效果”偏好 */
   @media (prefers-reduced-motion: reduce) {
     .bg      { animation: none; opacity: 1; transform: none; filter: none; }
@@ -900,6 +1199,8 @@
     .scroll-hint i { animation: none; }
     .news-inner, .news-card { transition: none; opacity: 1; transform: none; }
     .news-modal-backdrop, .news-modal-card { animation: none; }
+    .games-inner, .game-card { transition: none; opacity: 1; transform: none; }
+    .lightbox-backdrop, .lightbox-img { animation: none; }
   }
 </style>
 </head>
@@ -981,7 +1282,7 @@
   </div>
 
   <!-- ===== 新闻页 ===== -->
-  <main class="news" id="news">
+  <main class="news" id="news" data-reveal>
     <div class="news-grabber" aria-hidden="true"></div>
     <div class="news-inner">
       <h2 class="news-heading">新闻</h2>
@@ -1019,11 +1320,85 @@
     </div>
   </main>
 
+  <!-- ===== 游戏页（淡青底） ===== -->
+  <main class="games" id="games" data-reveal>
+    <div class="games-grabber" aria-hidden="true"></div>
+    <div class="games-inner">
+      <h2 class="games-heading">游戏</h2>
+      <p class="games-sub">在玩的、想推荐的，点按钮去官网看看。</p>
+      <div class="games-row" id="gamesRow">
+
+        <!-- ============================================================
+             这些卡片是「没建 games/ 文件夹」时的兜底。
+             一旦仓库里有 games/ 文件夹，会被自动读取的内容整个替换掉。
+
+             自动读取的目录结构（文件夹前面的数字决定排列顺序）：
+               games/1战争雷霆/
+                 ├── WTlogo.png      任意图片 = 图标
+                 └── 链接.txt        一行一个：端游 https://...  /  手游 https://...
+               games/2卡拉彼丘/
+               games/3广告位招租/    （链接.txt 里只写「联系我」= 灰色不可点按钮）
+
+             图标默认「完整显示」（适合 logo）；
+             想让它铺满整个方块，文件名以「封面」开头即可，如 封面.webp
+             ============================================================ -->
+        <article class="game-card">
+          <div class="game-icon">
+            <span class="game-icon-fallback">战</span>
+            <img src="./games/1战争雷霆/WTlogo.png" alt="战争雷霆">
+          </div>
+          <h3 class="game-title">战争雷霆</h3>
+          <div class="game-links">
+            <a class="game-link" href="https://warthunder.com/zh" target="_blank" rel="noopener noreferrer">端游 →</a>
+            <a class="game-link game-link--ghost" href="https://wtmobile.com/zh/" target="_blank" rel="noopener noreferrer">手游 →</a>
+          </div>
+        </article>
+
+        <article class="game-card">
+          <div class="game-icon">
+            <span class="game-icon-fallback">卡</span>
+            <img src="./games/2卡拉彼丘/KLBQlogo.png" alt="卡拉彼丘">
+          </div>
+          <h3 class="game-title">卡拉彼丘</h3>
+          <div class="game-links">
+            <a class="game-link" href="https://klbqsem.idreamsky.com/klbq-download-cn/" target="_blank" rel="noopener noreferrer">端游 →</a>
+            <a class="game-link game-link--ghost" href="https://klbqm.idreamsky.com/" target="_blank" rel="noopener noreferrer">手游 →</a>
+          </div>
+        </article>
+
+        <article class="game-card">
+          <div class="game-icon game-icon--cover">
+            <span class="game-icon-fallback">租</span>
+            <img src="./games/3广告位招租/封面.webp" alt="广告位招租">
+          </div>
+          <h3 class="game-title">广告位招租</h3>
+          <div class="game-links">
+            <span class="game-link game-link--muted">联系我 →</span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </main>
+
 <noscript>
   <style>
-    .news-inner, .news-card { opacity: 1 !important; transform: none !important; }
+    .news-inner, .news-card, .games-inner, .game-card {
+      opacity: 1 !important;
+      transform: none !important;
+    }
   </style>
 </noscript>
+
+<!-- ===== 点图看原图 ===== -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="查看原图" aria-hidden="true">
+  <div class="lightbox-backdrop" id="lightboxBackdrop"></div>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="">
+  <button class="lightbox-close" id="lightboxClose" type="button" aria-label="关闭">&times;</button>
+  <button class="lightbox-nav lightbox-nav--prev" id="lightboxPrev" type="button" aria-label="上一张" hidden><i></i></button>
+  <button class="lightbox-nav lightbox-nav--next" id="lightboxNext" type="button" aria-label="下一张" hidden><i></i></button>
+  <div class="lightbox-counter" id="lightboxCounter" hidden></div>
+</div>
 
 <!-- ===== 新闻详情弹层：点卡片打开 ===== -->
 <div class="news-modal" id="newsModal" role="dialog" aria-modal="true"
@@ -1085,42 +1460,49 @@
 </script>
 
 <script>
-  /* ================= 新闻页：白底随滚动推上来 ================= */
+  /* ================================================================
+     分屏：新闻页（白）和游戏页（淡青）随滚动把底色推上来
+     给任意 <section> 加 data-reveal 就会自动生效
+     ================================================================ */
   (function () {
-    var news = document.getElementById("news");
-    var root = document.documentElement;
-    if (!news) return;
+    var sections = Array.prototype.slice.call(document.querySelectorAll("[data-reveal]"));
+    if (!sections.length) return;
 
     var reduceMotion = window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var ticking = false;
-    var revealed = false;
 
     function update() {
       ticking = false;
       var vh = window.innerHeight || 1;
-      var y = window.pageYOffset || root.scrollTop || 0;
-      var p = y / vh;
-      if (p < 0) p = 0;
-      if (p > 1) p = 1;
+      var onLight = false;
 
-      // 0 = 白底还在屏幕外，1 = 完全铺满。用来驱动圆角、阴影、小横杠
-      root.style.setProperty("--reveal", p.toFixed(3));
+      sections.forEach(function (sec) {
+        // 0 = 这块还在视口下方；1 = 它的上边缘已贴到视口顶部（底色铺满）
+        var top = sec.getBoundingClientRect().top;
+        var p = (vh - top) / vh;
+        if (p < 0) p = 0;
+        if (p > 1) p = 1;
 
-      // 滚到新闻页后，右上角按钮换成浅色样式
-      document.body.classList.toggle("on-news", p > 0.62);
+        // 驱动圆角、阴影、顶部小横杠
+        sec.style.setProperty("--reveal", p.toFixed(3));
+        if (p > 0.62) onLight = true;
 
-      if (reduceMotion) return;   // 减少动态效果时内容常驻，不做播放/收起
+        if (reduceMotion) return;   // 减少动态效果时内容常驻，不做播放/收起
 
-      // 白底铺满 → 内容出来；滑回顶部附近再下来 → 收回去重播。
-      // 用两个不同的阈值（0.96 / 0.15）做回滞，免得在新闻页小幅滚动时反复闪。
-      if (p >= 0.96 && !revealed) {
-        revealed = true;
-        news.classList.add("is-ready");
-      } else if (p <= 0.15 && revealed) {
-        revealed = false;
-        news.classList.remove("is-ready");
-      }
+        // 铺满 → 内容出来；滑回上一屏 → 收回去，下次滑下来重播。
+        // 两个不同阈值(0.96 / 0.15)做回滞，免得小幅滚动时反复闪。
+        if (p >= 0.96 && !sec.__on) {
+          sec.__on = true;
+          sec.classList.add("is-ready");
+        } else if (p <= 0.15 && sec.__on) {
+          sec.__on = false;
+          sec.classList.remove("is-ready");
+        }
+      });
+
+      // 浅色页面盖住屏幕时，右上角按钮换成浅色样式
+      document.body.classList.toggle("on-light", onLight);
     }
 
     function onScroll() {
@@ -1132,8 +1514,17 @@
 
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
-    if (reduceMotion) news.classList.add("is-ready");
+    if (reduceMotion) sections.forEach(function (s) { s.classList.add("is-ready"); });
     update();   // 刷新后可能停在中间，先算一次
+  })();
+
+  /* ================= 游戏图标：图没传就用字母占位 ================= */
+  (function () {
+    Array.prototype.forEach.call(document.querySelectorAll(".game-icon img"), function (img) {
+      function fallback() { img.hidden = true; }
+      img.addEventListener("error", fallback);
+      if (img.complete && img.naturalWidth === 0) fallback();   // 已经失败过的
+    });
   })();
 </script>
 
@@ -1157,11 +1548,13 @@
     var NEWS_REPO = "shaobing114/1";   // 仓库：用户名/仓库名
     var NEWS_BRANCH = "main";          // 分支名
     var NEWS_DIR = "news";             // 放新闻的文件夹名
-    var CACHE_KEY = "news-cache-v1";
+    var GAMES_DIR = "games";           // 放游戏的文件夹名
+    var CACHE_KEY = "repo-cache-v2";
     var CACHE_MS = 10 * 60 * 1000;     // 缓存 10 分钟，省着用 GitHub 接口的额度
 
     var grid = document.querySelector(".news-grid");
     var hintEl = document.getElementById("newsHint");
+    var gamesRow = document.getElementById("gamesRow");
 
     /* ---------------- 地址工具 ---------------- */
     function encodePath(p) {
@@ -1173,13 +1566,15 @@
     function cdnUrl(p) {
       return "https://cdn.jsdelivr.net/gh/" + NEWS_REPO + "@" + NEWS_BRANCH + "/" + encodePath(p);
     }
-    function imgUrl(im) { return im.url ? im.url : rawUrl(im.path); }
+    // 记住真正加载成功的那个地址，"看原图"时优先用它
+    function imgUrl(im) { return im.loaded || (im.url ? im.url : rawUrl(im.path)); }
     function imgFallback(im) { return im.url ? "" : cdnUrl(im.path); }
 
     // 图片先走 raw.githubusercontent，拉不到就换 jsDelivr；
     // 两个都失败（格式浏览器不支持 / 文件不存在）就留个灰底占位，别显示裂图
     function loadImg(img, im) {
       var failed = 0;
+      img.onload = function () { im.loaded = img.currentSrc || img.src; };
       img.onerror = function () {
         failed++;
         var fb = failed === 1 ? imgFallback(im) : "";
@@ -1192,22 +1587,146 @@
       img.src = imgUrl(im);
     }
 
-    // 文本：两个源都试；顺手兼容 Windows 记事本存成 GBK 的情况
-    async function fetchText(path) {
+    // 二进制（docx 用）：两个源都试
+    async function fetchBuffer(path) {
       var sources = [rawUrl(path), cdnUrl(path)];
       for (var i = 0; i < sources.length; i++) {
         try {
           var r = await fetch(sources[i], { cache: "no-cache" });
           if (!r.ok) continue;
-          var buf = await r.arrayBuffer();
-          var txt = new TextDecoder("utf-8").decode(buf);
-          if (txt.indexOf("\uFFFD") >= 0) {
-            try { txt = new TextDecoder("gbk").decode(buf); } catch (e) {}
-          }
-          return txt.replace(/\r\n/g, "\n").trim();
+          return await r.arrayBuffer();
         } catch (e) { /* 换下一个源 */ }
       }
-      return "";
+      return null;
+    }
+
+    // 文本：顺便兼容 Windows 记事本存成 GBK 的情况
+    async function fetchText(path) {
+      var buf = await fetchBuffer(path);
+      if (!buf) return "";
+      var txt = new TextDecoder("utf-8").decode(buf);
+      if (txt.indexOf("\uFFFD") >= 0) {
+        try { txt = new TextDecoder("gbk").decode(buf); } catch (e) {}
+      }
+      return txt.replace(/\r\n/g, "\n").trim();
+    }
+
+    /* ---------------- docx 正文：docx 就是个 zip，浏览器原生解压 ---------------- */
+    var IMG_MIME = {
+      png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif",
+      webp: "image/webp", bmp: "image/bmp", svg: "image/svg+xml"
+    };
+
+    function unzip(buf) {
+      var view = new DataView(buf), u8 = new Uint8Array(buf);
+      var eocd = -1, min = Math.max(0, u8.length - 22 - 65535);
+      for (var i = u8.length - 22; i >= min; i--) {
+        if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+      }
+      if (eocd < 0) throw new Error("不是有效的 docx（找不到 zip 结尾）");
+
+      var count = view.getUint16(eocd + 10, true);
+      var off = view.getUint32(eocd + 16, true);
+      var files = {}, p = off;
+
+      for (var n = 0; n < count && view.getUint32(p, true) === 0x02014b50; n++) {
+        var nameLen = view.getUint16(p + 28, true);
+        var extraLen = view.getUint16(p + 30, true);
+        var cmtLen = view.getUint16(p + 32, true);
+        var name = new TextDecoder("utf-8").decode(u8.subarray(p + 46, p + 46 + nameLen));
+        files[name] = {
+          method: view.getUint16(p + 10, true),
+          size: view.getUint32(p + 20, true),
+          local: view.getUint32(p + 42, true)
+        };
+        p += 46 + nameLen + extraLen + cmtLen;
+      }
+      return { view: view, u8: u8, files: files };
+    }
+
+    async function unzipRead(zip, name) {
+      var e = zip.files[name];
+      if (!e) return null;
+      var nl = zip.view.getUint16(e.local + 26, true);
+      var xl = zip.view.getUint16(e.local + 28, true);
+      var start = e.local + 30 + nl + xl;
+      var data = zip.u8.subarray(start, start + e.size);
+      if (e.method === 0) return data;                       // 没压缩
+      if (e.method !== 8) throw new Error("docx 用了不支持的压缩方式");
+      if (typeof DecompressionStream === "undefined") {
+        throw new Error("这个浏览器太旧，读不了 docx。换新版 Chrome / Edge，或改用 正文.txt");
+      }
+      var stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+
+    // 返回 [{t:"p",text}, {t:"img",url}]，图文按 docx 里的原始顺序
+    async function parseDocx(buf) {
+      var zip = unzip(buf);
+      var dec = new TextDecoder("utf-8");
+
+      var docBytes = await unzipRead(zip, "word/document.xml");
+      if (!docBytes) throw new Error("docx 里读不到 word/document.xml");
+
+      // rId → word/ 下的相对路径
+      var rels = {};
+      var relBytes = await unzipRead(zip, "word/_rels/document.xml.rels");
+      if (relBytes) {
+        var rd = new DOMParser().parseFromString(dec.decode(relBytes), "application/xml");
+        Array.prototype.forEach.call(rd.getElementsByTagName("Relationship"), function (r) {
+          var t = (r.getAttribute("Target") || "").replace(/^\//, "").replace(/^word\//, "");
+          rels[r.getAttribute("Id")] = t;
+        });
+      }
+
+      // word/media/* 全部转成 blob URL（emf/wmf 浏览器显示不了，跳过）
+      var urls = {};
+      var mediaNames = Object.keys(zip.files).filter(function (n) {
+        return n.indexOf("word/media/") === 0;
+      });
+      for (var i = 0; i < mediaNames.length; i++) {
+        var n = mediaNames[i];
+        var ext = (n.split(".").pop() || "").toLowerCase();
+        if (!IMG_MIME[ext]) continue;
+        var bytes = await unzipRead(zip, n);
+        if (bytes) {
+          urls[n.replace(/^word\//, "")] =
+            URL.createObjectURL(new Blob([bytes], { type: IMG_MIME[ext] }));
+        }
+      }
+
+      // 逐段落抽文字和插图
+      var R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+      var doc = new DOMParser().parseFromString(dec.decode(docBytes), "application/xml");
+      var blocks = [];
+
+      Array.prototype.forEach.call(doc.getElementsByTagName("w:p"), function (p) {
+        var text = "", imgs = [];
+
+        (function walk(node) {
+          var kids = node.childNodes;
+          for (var k = 0; k < kids.length; k++) {
+            var c = kids[k];
+            if (c.nodeType !== 1) continue;
+            var tag = c.nodeName;
+            if (tag === "w:t") { text += c.textContent; continue; }
+            if (tag === "w:br" || tag === "w:cr") { text += "\n"; continue; }
+            if (tag === "w:tab") { text += "\t"; continue; }
+            if (tag === "a:blip" || tag === "v:imagedata") {
+              var rid = c.getAttributeNS(R_NS, "embed") || c.getAttribute("r:embed") ||
+                        c.getAttributeNS(R_NS, "id") || c.getAttribute("r:id");
+              if (rid && rels[rid] && urls[rels[rid]]) imgs.push(urls[rels[rid]]);
+              continue;
+            }
+            if (c.childNodes.length) walk(c);
+          }
+        })(p);
+
+        if (text.trim()) blocks.push({ t: "p", text: text.replace(/\s+$/, "") });
+        imgs.forEach(function (u) { blocks.push({ t: "img", url: u }); });
+      });
+
+      return blocks;
     }
 
     /* ---------------- 从文件树拼出新闻列表 ---------------- */
@@ -1240,20 +1759,24 @@
         var it = map[folder] || (map[folder] = { key: folder, images: [], textPath: "", textScore: -1 });
 
         var isImage = /\.(jpe?g|jfif|png|webp|gif|avif|bmp)$/i.test(file);
+        var isDocx = /\.docx$/i.test(file);
         var isText = /\.(txt|text|md)$/i.test(file);
 
         if (isImage) {
           // 排序只看文件名里的数字，跟后缀没关系，所以 jpg/png/webp 混着放也能排对
           var n = /(\d+)/.exec(file);
           it.images.push({ path: p, name: file, num: n ? parseInt(n[1], 10) : 9999 });
-        } else if (isText) {
-          // 同时有多个文本时，优先「正文」
-          var score = /正文/.test(file) ? 2 : (/\.txt$/i.test(file) ? 1 : 0);
+        } else if (isDocx || isText) {
+          // 多个正文按优先级挑：正文.docx(4) > 任意.docx(3) > 正文.txt(2) > 任意.txt(1) > .md(0)
+          var score = isDocx
+            ? (/正文/.test(file) ? 4 : 3)
+            : (/正文/.test(file) ? 2 : (/\.txt$/i.test(file) ? 1 : 0));
           if (score > it.textScore) { it.textScore = score; it.textPath = p; }
         } else if (file.charAt(0) !== "." && file !== "Thumbs.db") {
           // 认不出来的文件提示一下，免得"我明明放进去了却没显示"
-          console.warn("[news] " + p + " 不是支持的配图格式，已忽略。\n" +
-            "浏览器能直接显示：jpg / jpeg / jfif / png / webp / gif / avif / bmp。\n" +
+          console.warn("[news] " + p + " 不是支持的格式，已忽略。\n" +
+            "配图支持：jpg / jpeg / jfif / png / webp / gif / avif / bmp\n" +
+            "正文支持：正文.docx（里面可以插图）/ 正文.txt\n" +
             "HEIC（iPhone 默认格式）、TIFF、RAW 需要先转成 jpg 或 png。");
         }
       });
@@ -1284,31 +1807,170 @@
         var raw = localStorage.getItem(CACHE_KEY);
         if (!raw) return null;
         var obj = JSON.parse(raw);
-        return obj && obj.items ? obj : null;
+        return obj && obj.tree ? obj : null;
       } catch (e) { return null; }
     }
-    function writeCache(items) {
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), items: items })); } catch (e) {}
+    function writeCache(tree) {
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), tree: tree })); } catch (e) {}
     }
 
-    async function loadItems() {
-      // 加了新新闻想马上看到：访问「页面地址?refresh=1」就会跳过缓存
+    // 一次请求拿到整个仓库的文件树，新闻和游戏共用同一份
+    async function loadTree() {
+      // 加了新内容想马上看到：访问「页面地址?refresh=1」就会跳过缓存
       var bypass = /[?&]refresh/.test(location.search) || location.hash === "#refresh";
       var cached = bypass ? null : readCache();
-      if (cached && Date.now() - cached.t < CACHE_MS) return cached.items;
+      if (cached && Date.now() - cached.t < CACHE_MS) return cached.tree;
 
       try {
         var url = "https://api.github.com/repos/" + NEWS_REPO + "/git/trees/" + NEWS_BRANCH + "?recursive=1";
         var r = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
         if (!r.ok) throw new Error("HTTP " + r.status);
         var data = await r.json();
-        var items = buildItems(data.tree || []);
-        writeCache(items);
-        return items;
+        var tree = data.tree || [];
+        writeCache(tree);
+        return tree;
       } catch (e) {
-        console.warn("[news] 拉仓库文件树失败：", e);
-        return cached ? cached.items : null;    // 有旧缓存就先用旧的
+        console.warn("[加载] 拉仓库文件树失败：", e);
+        return cached ? cached.tree : null;    // 有旧缓存就先用旧的
       }
+    }
+
+    /* ---------------- 游戏：同样从文件树里读 ---------------- */
+    // "1战争雷霆" → 排序 1，标题 战争雷霆
+    function parseGameFolder(name) {
+      var m = /^(\d+)[\s\-_.、]*([\s\S]*)$/.exec(name);
+      if (m) return { order: parseInt(m[1], 10), title: (m[2] || "").trim() || name };
+      return { order: 9999, title: name };
+    }
+
+    // 链接.txt 一行一个：
+    //   端游 https://warthunder.com/zh
+    //   手游 https://wtmobile.com/zh/
+    //   联系我                     ← 不带网址 = 灰色不可点的按钮
+    //   # 井号开头  = 注释，会被忽略
+    function parseLinks(txt) {
+      return txt.split(/\r?\n/).map(function (line) {
+        line = line.trim();
+        if (!line || line.charAt(0) === "#") return null;
+        var i = line.search(/https?:\/\//);
+        if (i > 0) return { label: line.slice(0, i).trim(), href: line.slice(i).trim() };
+        if (i === 0) return { label: "官网", href: line };
+        return { label: line, href: "" };
+      }).filter(Boolean);
+    }
+
+    function buildGames(tree) {
+      var map = {};
+
+      tree.forEach(function (node) {
+        if (!node || node.type !== "blob") return;
+        var p = node.path || "";
+        if (p.indexOf(GAMES_DIR + "/") !== 0) return;
+
+        var rest = p.slice(GAMES_DIR.length + 1);
+        var cut = rest.indexOf("/");
+        if (cut < 0) return;                    // 直接丢在 games/ 下的散文件，忽略
+        var folder = rest.slice(0, cut);
+        var file = rest.slice(cut + 1);
+        if (file.indexOf("/") >= 0) return;
+
+        var g = map[folder] || (map[folder] = { key: folder, images: [], links: [], linkScore: -1 });
+        if (/\.(jpe?g|jfif|png|webp|gif|avif|bmp)$/i.test(file)) {
+          g.images.push({ path: p, name: file, cover: /^封面/.test(file) });
+        } else if (/\.(txt|text)$/i.test(file)) {
+          var score = /链接/.test(file) ? 2 : 1;
+          if (score > g.linkScore) { g.linkScore = score; g.txtPath = p; }
+        }
+      });
+
+      return Object.keys(map).map(function (k) {
+        var g = map[k];
+        var meta = parseGameFolder(k);
+        g.title = meta.title;
+        g.order = meta.order;
+        // 图标：优先「封面」开头的，否则取文件名最靠前的那张
+        g.icon = g.images.filter(function (im) { return im.cover; })[0] ||
+                 g.images.slice().sort(function (a, b) { return a.name.localeCompare(b.name); })[0] ||
+                 null;
+        return g;
+      }).sort(function (a, b) {
+        return a.order - b.order || a.title.localeCompare(b.title);
+      });
+    }
+
+    function linksBox(g) {
+      var box = document.createElement("div");
+      box.className = "game-links";
+
+      if (!g.links || !g.links.length) {
+        var none = document.createElement("span");
+        none.className = "game-link game-link--muted";
+        none.textContent = "敬请期待";
+        box.appendChild(none);
+        return box;
+      }
+
+      g.links.forEach(function (lk, i) {
+        var node;
+        if (lk.href) {
+          node = document.createElement("a");
+          node.className = "game-link" + (i > 0 ? " game-link--ghost" : "");
+          node.href = lk.href;
+          node.target = "_blank";
+          node.rel = "noopener noreferrer";
+        } else {
+          node = document.createElement("span");
+          node.className = "game-link game-link--muted";
+        }
+        node.textContent = lk.label + " →";
+        box.appendChild(node);
+      });
+      return box;
+    }
+
+    function makeGameCard(g) {
+      var card = document.createElement("article");
+      card.className = "game-card";
+
+      var icon = document.createElement("div");
+      icon.className = "game-icon" + (g.icon && g.icon.cover ? " game-icon--cover" : "");
+      var fb = document.createElement("span");
+      fb.className = "game-icon-fallback";
+      fb.textContent = g.title.charAt(0) || "游";
+      icon.appendChild(fb);
+      if (g.icon) {
+        var img = document.createElement("img");
+        img.alt = g.title;
+        img.loading = "lazy";
+        img.addEventListener("error", function () { img.hidden = true; });   // 图挂了就露出字母
+        img.src = "./" + encodePath(g.icon.path);
+        icon.appendChild(img);
+      }
+
+      var h3 = document.createElement("h3");
+      h3.className = "game-title";
+      h3.textContent = g.title;
+
+      card.appendChild(icon);
+      card.appendChild(h3);
+      card.appendChild(linksBox(g));
+      return card;
+    }
+
+    async function renderGames(games) {
+      if (!gamesRow || !games.length) return;   // 没建 games/ 就保留页面上手写的那几张
+
+      // 先把所有 链接.txt 并行拉下来，再一次性渲染
+      await Promise.all(games.map(async function (g) {
+        if (!g.txtPath) return;
+        g.links = parseLinks(await fetchText(g.txtPath));
+      }));
+
+      gamesRow.innerHTML = "";
+      games.forEach(function (g) { gamesRow.appendChild(makeGameCard(g)); });
+
+      console.log("[游戏] 读到 " + games.length + " 个：" +
+        games.map(function (g) { return g.title; }).join("、"));
     }
 
     function showHint(text) {
@@ -1337,6 +1999,51 @@
     var lockedY = 0;
     var token = 0;
 
+    /* ---------------- 点图看原图 ---------------- */
+    var lb = document.getElementById("lightbox");
+    var lbImg = document.getElementById("lightboxImg");
+    var lbPrev = document.getElementById("lightboxPrev");
+    var lbNext = document.getElementById("lightboxNext");
+    var lbCounter = document.getElementById("lightboxCounter");
+    var lbList = [], lbIdx = 0;
+
+    function paintLightbox() {
+      var it = lbList[lbIdx];
+      if (!it) return;
+      lbImg.src = it.src;
+      lbImg.alt = it.alt || "";
+      var multi = lbList.length > 1;
+      if (lbPrev) lbPrev.hidden = !multi;
+      if (lbNext) lbNext.hidden = !multi;
+      if (lbCounter) {
+        lbCounter.hidden = !multi;
+        lbCounter.textContent = (lbIdx + 1) + " / " + lbList.length;
+      }
+    }
+
+    function openLightbox(list, idx) {
+      if (!lb || !list || !list.length) return;
+      lbList = list;
+      lbIdx = idx >= 0 && idx < list.length ? idx : 0;
+      paintLightbox();
+      lb.classList.add("open");
+      lb.setAttribute("aria-hidden", "false");
+    }
+
+    function closeLightbox() {
+      if (!lb || !lb.classList.contains("open")) return;
+      lb.classList.remove("open");
+      lb.setAttribute("aria-hidden", "true");
+      lbImg.removeAttribute("src");
+    }
+
+    function stepLightbox(d) {
+      if (lbList.length < 2) return;
+      lbIdx = ((lbIdx + d) % lbList.length + lbList.length) % lbList.length;
+      paintLightbox();
+    }
+
+    /* ---------------- 滚动锁 ---------------- */
     function lockScroll() {
       lockedY = window.pageYOffset || 0;
       document.documentElement.style.overflow = "hidden";
@@ -1354,9 +2061,22 @@
 
     // 正文：空行分段，段内单换行变成 <br>
     function textToHtml(txt) {
-      if (!txt) return '<p class="news-loading">这篇还没有正文——在文件夹里放一个「正文.txt」就会出现。</p>';
+      if (!txt) {
+        return '<p class="news-loading">这篇还没有正文——在文件夹里放一个「正文.txt」或「正文.docx」就会出现。</p>';
+      }
       return txt.split(/\n{2,}/).map(function (block) {
         return "<p>" + escapeHtml(block).replace(/\n/g, "<br>") + "</p>";
+      }).join("");
+    }
+
+    // docx 解析出来的块 → HTML（图文保持原顺序）
+    function blocksToHtml(blocks) {
+      if (!blocks.length) return '<p class="news-loading">这个 docx 里没读到内容。</p>';
+      return blocks.map(function (b) {
+        if (b.t === "img") {
+          return '<img src="' + b.url + '" alt="" loading="lazy">';
+        }
+        return "<p>" + escapeHtml(b.text).replace(/\n/g, "<br>") + "</p>";
       }).join("");
     }
 
@@ -1451,17 +2171,38 @@
       lockScroll();
       closeBtn.focus();
 
-      if (current.textPath) {
-        var path = current.textPath;
+      if (!current.textPath) return;
+
+      // 有正文文件：docx 要解压解析，txt 直接读
+      var path = current.textPath;
+      var isDocx = /\.docx$/i.test(path);
+
+      if (!isDocx) {
         var txt = await fetchText(path);
         if (my !== token) return;            // 期间关了或换了别的新闻，就别往页面上写了
         textSlot.innerHTML = textToHtml(txt);
+        return;
+      }
+
+      try {
+        var buf = await fetchBuffer(path);
+        if (my !== token) return;
+        if (!buf) throw new Error("docx 下载失败，检查文件名和网络");
+        var blocks = await parseDocx(buf);
+        if (my !== token) return;
+        textSlot.innerHTML = blocksToHtml(blocks);
+      } catch (err) {
+        if (my !== token) return;
+        textSlot.innerHTML = '<p class="news-loading">docx 读不出来：' +
+          escapeHtml(err.message || String(err)) + '</p>';
+        console.warn("[news] docx 解析失败：", err);
       }
     }
 
     function closeNews() {
       if (!modal.classList.contains("open")) return;
       token++;                               // 作废还在路上的正文请求
+      closeLightbox();
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
       unlockScroll();
@@ -1523,7 +2264,41 @@
     if (prevBtn) prevBtn.addEventListener("click", function () { showImage(current.idx - 1); });
     if (nextBtn) nextBtn.addEventListener("click", function () { showImage(current.idx + 1); });
 
+    // 点主图 → 看原图（不裁切的大图）
+    imgSlot.addEventListener("click", function () {
+      if (!current || !current.images.length) return;
+      openLightbox(current.images.map(function (im) {
+        return { src: imgUrl(im), alt: current.title };
+      }), current.idx);
+    });
+
+    // 点正文里 docx 插的图 → 也能看原图，并且能在同一篇的图之间翻
+    textSlot.addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || t.tagName !== "IMG") return;
+      var imgs = Array.prototype.slice.call(textSlot.querySelectorAll("img"));
+      openLightbox(imgs.map(function (m) { return { src: m.src, alt: "" }; }), imgs.indexOf(t));
+    });
+
+    if (lb) {
+      var lbBackdrop = document.getElementById("lightboxBackdrop");
+      var lbClose = document.getElementById("lightboxClose");
+      if (lbBackdrop) lbBackdrop.addEventListener("click", closeLightbox);
+      if (lbClose) lbClose.addEventListener("click", closeLightbox);
+      lbImg.addEventListener("click", closeLightbox);      // 点图本身也关掉
+      if (lbPrev) lbPrev.addEventListener("click", function () { stepLightbox(-1); });
+      if (lbNext) lbNext.addEventListener("click", function () { stepLightbox(1); });
+    }
+
     document.addEventListener("keydown", function (e) {
+      // 灯箱开着时，按键优先给灯箱
+      if (lb && lb.classList.contains("open")) {
+        if (e.key === "Escape") { closeLightbox(); return; }
+        if (e.key === "ArrowLeft") { stepLightbox(-1); return; }
+        if (e.key === "ArrowRight") { stepLightbox(1); return; }
+        return;
+      }
+
       if (!modal.classList.contains("open")) return;
       if (e.key === "Escape") { closeNews(); return; }
       if (!current) return;
@@ -1535,22 +2310,30 @@
     bindCards();   // 先让页面里手写的那张卡片可以点
 
     (async function init() {
-      var items = await loadItems();
+      var tree = await loadTree();
 
-      if (items === null) {
-        showHint("新闻列表暂时拉不到（可能是 GitHub 接口限流或网络不通），刷新一下再看看。");
+      if (tree === null) {
+        // 拉不到就保留页面上手写的兜底内容，不算白屏
+        showHint("内容暂时拉不到（可能是 GitHub 接口限流或网络不通），刷新一下再看看。");
         return;
       }
+
+      /* ---- 新闻 ---- */
+      var items = buildItems(tree);
       if (!items.length) {
         showHint("还没检测到新闻。在仓库里建一个 " + NEWS_DIR + "/日期+标题/ 这样的文件夹，" +
-                 "里面放「配图01.jpg」和「正文.txt」，这里就会自动出现。");
-        return;
+                 "里面放「配图01.jpg」和「正文.txt」或「正文.docx」，这里就会自动出现。");
+      } else {
+        showHint("");
+        grid.innerHTML = "";
+        items.forEach(function (it) { grid.appendChild(makeCard(it)); });
+        bindCards();
+        console.log("[新闻] 读到 " + items.length + " 条：" +
+          items.map(function (it) { return it.title; }).join("、"));
       }
 
-      showHint("");
-      grid.innerHTML = "";
-      items.forEach(function (it) { grid.appendChild(makeCard(it)); });
-      bindCards();
+      /* ---- 游戏 ---- */
+      await renderGames(buildGames(tree));
     })();
   })();
 </script>
